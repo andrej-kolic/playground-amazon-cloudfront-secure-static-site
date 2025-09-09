@@ -101,8 +101,9 @@ jobs:
             const { execSync } = require('child_process');
             try {
               const output = execSync('./scripts/deploy.sh dev outputs', { encoding: 'utf8' });
-              const websiteUrl = output.match(/Website URL: (https?:\/\/[^\s]+)/);
+              console.log('*** output:', output);
 
+              const websiteUrl = output.match(/Website URL: (https?:\/\/[^\s]+)/);
               console.log('*** websiteUrl:', websiteUrl);
 
               if (websiteUrl) {
