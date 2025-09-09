@@ -152,7 +152,7 @@ get_stack_outputs() {
     if [ -z "$WEBSITE_URL" ] || [ "$WEBSITE_URL" = "None" ]; then
         print_warning "Could not retrieve website URL from stack outputs"
     else
-        print_info "Website URL: $WEBSITE_URL"
+        print_info "Website URL: https://$WEBSITE_URL"
     fi
 }
 
