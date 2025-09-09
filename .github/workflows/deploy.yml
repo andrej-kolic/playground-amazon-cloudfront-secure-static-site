@@ -103,6 +103,8 @@ jobs:
               const output = execSync('./scripts/deploy.sh dev outputs', { encoding: 'utf8' });
               const websiteUrl = output.match(/Website URL: (https?:\/\/[^\s]+)/);
 
+              console.log('*** websiteUrl:', websiteUrl);
+
               if (websiteUrl) {
                 github.rest.issues.createComment({
                   issue_number: context.issue.number,
