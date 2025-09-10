@@ -32,8 +32,8 @@ on:
         type: choice
 
         options:
-          - infra
           - content
+          - infra
 
 concurrency:
   # Unique group for each workflow + branch + environment + action
