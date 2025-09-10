@@ -19,7 +19,7 @@ on:
       environment:
         description: 'Deployment environment'
         required: true
-        default: ${ env.DEFAULT_ENVIRONMENT }
+        default: dev
         type: choice
         options:
           - dev
@@ -28,12 +28,11 @@ on:
       action:
         description: 'Deployment action'
         required: true
-        default: ${ env.DEFAULT_ACTION }
+        default: content
         type: choice
-
         options:
-          - content
           - infra
+          - content
 
 concurrency:
   # Unique group for each workflow + branch + environment + action
