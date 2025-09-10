@@ -101,10 +101,10 @@ jobs:
             const { execSync } = require('child_process');
             try {
               const output = execSync('./scripts/deploy.sh dev outputs', { encoding: 'utf8' });
-              console.log('*** output:', output);
+              console.log('outputs:\n', output);
 
               const websiteUrl = output.match(/Website URL: (https?:\/\/[^\s]+)/);
-              console.log('*** websiteUrl:', websiteUrl);
+              console.log('websiteUrl:', websiteUrl);
 
               if (websiteUrl) {
                 github.rest.issues.createComment({
