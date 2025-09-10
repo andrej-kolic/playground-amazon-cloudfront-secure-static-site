@@ -78,11 +78,11 @@ jobs:
       )
     environment: development
     steps:
-      # - name: Log Environment in Build Job
-      - uses: ./.github/actions/log-env  # Reference the local action
-
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # - name: Log Environment in Build Job
+      - uses: ./.github/actions/log-env  # Reference the local action
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
