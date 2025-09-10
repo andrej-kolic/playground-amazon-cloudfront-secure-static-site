@@ -14,7 +14,6 @@ ACTION=${2:-deploy}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
 
 
-# Get configuration for environment
 get_config() {
     print_info "Loading configuration for environment: $ENVIRONMENT from $CONFIG_FILE"
 
@@ -90,7 +89,6 @@ deploy_infrastructure() {
 }
 
 
-# Get stack outputs
 get_stack_outputs() {
     print_info "Retrieving stack outputs..."
 
