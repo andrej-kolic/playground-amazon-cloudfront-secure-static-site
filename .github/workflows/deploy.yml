@@ -6,12 +6,12 @@ on:
   #   # - cron: '10 15 11 7 *'
   push:
     branches:
-      # - main
+      - main
       - master
       - develop
   pull_request:
     branches:
-      # - main
+      - main
       - master
     types: [opened]
   workflow_dispatch:
@@ -110,7 +110,7 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
       (
         github.event_name == 'workflow_dispatch' &&
         github.event.inputs.environment == 'staging' &&
