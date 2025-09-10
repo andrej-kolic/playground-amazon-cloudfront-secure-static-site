@@ -53,26 +53,6 @@ get_config() {
 
 package_static() {
     print_info "Packaging static site content..."
-    
-    # # Replace this with your actual site build/output directory
-    # SITE_DIR="./www"
-    # ZIP_FILE="${ROOT_DIR}/site-content.zip"
-
-    # if [ ! -d "$SITE_DIR" ]; then
-    #     print_error "Site directory '$SITE_DIR' does not exist."
-    #     exit 1
-    # fi
-
-    # # Create a zip file of the site content
-    # (cd "$SITE_DIR" && zip -r "$ZIP_FILE" .)
-
-    # if [ $? -ne 0 ]; then
-    #     print_error "Failed to create zip file for site content."
-    #     exit 1
-    # fi
-
-    # print_success "Static site content packaged into $ZIP_FILE"
-
     make -C "$ROOT_DIR" package-static
 }
 
@@ -152,7 +132,7 @@ get_stack_outputs() {
     if [ -z "$WEBSITE_URL" ] || [ "$WEBSITE_URL" = "None" ]; then
         print_warning "Could not retrieve website URL from stack outputs"
     else
-        print_info "Website URL: $WEBSITE_URL"
+        print_info "Website URL: https://$WEBSITE_URL"
     fi
 }
 

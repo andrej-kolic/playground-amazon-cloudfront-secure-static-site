@@ -7,10 +7,12 @@ on:
   push:
     branches:
       - main
+      - master
       - develop
   pull_request:
     branches:
       - main
+      - master
     types: [opened]
   workflow_dispatch:
     inputs:
@@ -30,8 +32,8 @@ on:
         type: choice
 
         options:
-          - infra
           - content
+          - infra
 
 concurrency:
   # Unique group for each workflow + branch + environment + action
@@ -64,6 +66,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Log Environment
+        uses: ./.github/actions/log-env
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -84,7 +89,10 @@ jobs:
             const { execSync } = require('child_process');
             try {
               const output = execSync('./scripts/deploy.sh dev outputs', { encoding: 'utf8' });
+              console.log('outputs:\n', output);
+
               const websiteUrl = output.match(/Website URL: (https?:\/\/[^\s]+)/);
+              console.log('websiteUrl:', websiteUrl);
 
               if (websiteUrl) {
                 github.rest.issues.createComment({
@@ -102,7 +110,7 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
       (
         github.event_name == 'workflow_dispatch' &&
         github.event.inputs.environment == 'staging' &&
@@ -112,6 +120,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Log Environment
+        uses: ./.github/actions/log-env
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -140,6 +151,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Log Environment
+        uses: ./.github/actions/log-env
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -152,7 +166,6 @@ jobs:
           action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
           ./scripts/deploy.sh prod $action
 
-      # TODO: test release creation
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
