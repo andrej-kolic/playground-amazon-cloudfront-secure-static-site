@@ -8,7 +8,8 @@
       "DomainName": "andrejkolic.com",
       "SubDomain": "aw1-dev",
       "Environment": "dev",
-      "HostedZoneId": "Z00295123IDZ7CVMX671W"
+      "HostedZoneId": "Z00295123IDZ7CVMX671W",
+      "CreateApex": "no"
     }
   },
   "staging": {
@@ -16,7 +17,8 @@
       "DomainName": "andrejkolic.com",
       "SubDomain": "aw1-staging",
       "Environment": "staging",
-      "HostedZoneId": "Z00295123IDZ7CVMX671W"
+      "HostedZoneId": "Z00295123IDZ7CVMX671W",
+      "CreateApex": "no"
     }
   },
   "prod": {
@@ -24,7 +26,8 @@
       "DomainName": "andrejkolic.com",
       "SubDomain": "aw1",
       "Environment": "prod",
-      "HostedZoneId": "Z00295123IDZ7CVMX671W"
+      "HostedZoneId": "Z00295123IDZ7CVMX671W",
+      "CreateApex": "yes"
     }
   }
 }
