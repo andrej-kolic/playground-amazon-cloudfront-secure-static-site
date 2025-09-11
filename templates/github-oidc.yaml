@@ -83,6 +83,12 @@ Resources:
                   - iam:CreatePolicyVersion
                   - iam:DeletePolicyVersion
                   - iam:SetDefaultPolicyVersion
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:ListRoleTags
+                  - iam:TagPolicy
+                  - iam:UntagPolicy
+                  - iam:ListPolicyTags
                 Resource: '*'
               - Effect: Allow
                 Action:
