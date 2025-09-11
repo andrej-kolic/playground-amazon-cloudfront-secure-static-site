@@ -82,30 +82,18 @@ package_artifacts() {
 deploy_oidc() {
     print_info "Deploying GitHub OIDC Provider and Role..."
     
-    # Check AWS credentials
-    print_info "Checking AWS credentials..."
-    if ! aws sts get-caller-identity > /dev/null 2>&1; then
-        print_error "AWS credentials not configured. Please run 'aws configure' first."
-        exit 1
-    fi
-    
-    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-    print_info "AWS Account ID: $ACCOUNT_ID"
-    print_info ""
-    
     # Check if OIDC provider already exists
-    print_info "Checking for existing OIDC providers..."
+    print_debug "Checking for existing OIDC providers..."
     EXISTING_OIDC_ARN=""
     if aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[?ends_with(Arn, `token.actions.githubusercontent.com`)].Arn' --output text | grep -q "arn:aws:iam"; then
         EXISTING_OIDC_ARN=$(aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[?ends_with(Arn, `token.actions.githubusercontent.com`)].Arn' --output text)
-        print_info "Found existing OIDC provider: $EXISTING_OIDC_ARN"
+        print_debug "Found existing OIDC provider: $EXISTING_OIDC_ARN"
     else
-        print_info "No existing OIDC provider found. Will create a new one."
+        print_debug "No existing OIDC provider found. Will create a new one."
     fi
-    print_info ""
     
     # Deploy OIDC stack
-    print_info "Deploying OIDC CloudFormation stack..."
+    print_debug "Deploying OIDC CloudFormation stack..."
     if ! aws cloudformation deploy \
         --region $REGION \
         --stack-name $OIDC_STACK_NAME \
@@ -129,7 +117,6 @@ deploy_oidc() {
         --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
         --output text 2>/dev/null)
     
-    print_success "OIDC Setup Complete!"
     print_info "Add the following secret to your GitHub repository:"
     print_info "   Name: AWS_ROLE_ARN"
     print_info "   Value: $GITHUB_ROLE_ARN"
@@ -251,6 +238,16 @@ invalidate_cloudfront_cache() {
 
 
 main() {
+    # Check AWS credentials
+    print_debug "Checking AWS credentials..."
+    if ! aws sts get-caller-identity > /dev/null 2>&1; then
+        print_error "AWS credentials not configured. Please run 'aws configure' first."
+        exit 1
+    fi
+    local ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+    print_debug "AWS Account ID: $ACCOUNT_ID"
+
+    # Execute action
     case $ACTION in
         "test")
             check_dependencies
