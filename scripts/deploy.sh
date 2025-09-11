@@ -239,12 +239,12 @@ invalidate_cloudfront_cache() {
 
 main() {
     # Check AWS credentials
-    print_debug "Checking AWS credentials..."
-    if ! aws sts get-caller-identity > /dev/null 2>&1; then
+    print_info "Checking AWS credentials..."
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
+    if [ -z "$ACCOUNT_ID" ]; then
         print_error "AWS credentials not configured. Please run 'aws configure' first."
         exit 1
     fi
-    local ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
     print_debug "AWS Account ID: $ACCOUNT_ID"
 
     # Execute action
