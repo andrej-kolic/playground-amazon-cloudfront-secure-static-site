@@ -80,31 +80,7 @@ package_artifacts() {
 
 
 deploy_oidc() {
-    print_info "=== GitHub OIDC Setup for AWS ==="
-    print_info ""
     print_info "Deploying GitHub OIDC Provider and Role..."
-    
-    # Validate GitHub configuration
-    if [[ "$GITHUB_ORG" == "null" ]] || [[ "$GITHUB_REPO" == "null" ]] || [[ -z "$GITHUB_ORG" ]] || [[ -z "$GITHUB_REPO" ]]; then
-        print_error "GitHub organization and repository must be configured in deploy-config.json"
-        print_error "Expected format:"
-        print_error '{
-  "_shared": {
-    "github": {
-      "org": "your-github-org",
-      "repo": "your-repo-name"
-    }
-  }
-}'
-        exit 1
-    fi
-    
-    print_info "Configuration:"
-    print_info "  GitHub Org: $GITHUB_ORG"
-    print_info "  GitHub Repo: $GITHUB_REPO"
-    print_info "  AWS Region: $REGION"
-    print_info "  Stack Name: $OIDC_STACK_NAME"
-    print_info ""
     
     # Check AWS credentials
     print_info "Checking AWS credentials..."
@@ -153,32 +129,10 @@ deploy_oidc() {
         --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
         --output text 2>/dev/null)
     
-    OIDC_PROVIDER_ARN=$(aws cloudformation describe-stacks \
-        --stack-name "$OIDC_STACK_NAME" \
-        --region "$REGION" \
-        --query 'Stacks[0].Outputs[?OutputKey==`OIDCProviderArn`].OutputValue' \
-        --output text 2>/dev/null)
-    
-    print_info ""
-    print_success "=== OIDC Setup Complete! ==="
-    print_info ""
-    print_info "GitHub Actions Role ARN:"
-    print_info "  $GITHUB_ROLE_ARN"
-    print_info ""
-    print_info "OIDC Provider ARN:"
-    print_info "  $OIDC_PROVIDER_ARN"
-    print_info ""
-    print_info "=== Next Steps ==="
-    print_info ""
-    print_info "1. Add the following secret to your GitHub repository:"
+    print_success "OIDC Setup Complete!"
+    print_info "Add the following secret to your GitHub repository:"
     print_info "   Name: AWS_ROLE_ARN"
     print_info "   Value: $GITHUB_ROLE_ARN"
-    print_info ""
-    print_info "2. Go to: https://github.com/$GITHUB_ORG/$GITHUB_REPO/settings/secrets/actions"
-    print_info ""
-    print_info "3. Click 'New repository secret' and add the secret"
-    print_info ""
-    print_info "4. Your GitHub Actions workflows can now use OIDC authentication!"
 }
 
 
