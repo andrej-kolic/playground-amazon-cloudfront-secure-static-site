@@ -1,7 +1,9 @@
 {
   "_shared": {
     "name": "aw1",
-    "region": "us-east-1"
+    "region": "us-east-1",
+    "GitHubOrg": "andrej-kolic",
+    "GitHubRepo": "playground-amazon-cloudfront-secure-static-site"
   },
   "dev": {
     "parameters": {
