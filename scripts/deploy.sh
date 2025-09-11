@@ -10,7 +10,7 @@ export AWS_PAGER=""
 
 # Default values
 ENVIRONMENT=${1:-dev}
-ACTION=${2:-deploy}
+ACTION=${2:-content}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
 
 
@@ -165,7 +165,7 @@ invalidate_cloudfront_cache() {
     print_info "Invalidating CloudFront cache..."
 
     # Get the CloudFront Distribution ID from CloudFormation outputs
-    DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+    local DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
         --region $REGION \
         --stack-name $STACK_NAME \
         --query "Stacks[0].Outputs[?OutputKey=='CFDistributionId'].OutputValue" \
