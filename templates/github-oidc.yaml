@@ -55,6 +55,9 @@ Resources:
               StringLike:
                 'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubOrg}/${GitHubRepo}:*'
       ManagedPolicyArns:
+        # Too permissive for production. Consider using more restrictive policies in real projects.
+        # TODO: Create a custom IAM policy granting only the permissions needed for CloudFormation deployments
+        # and attach this custom policy to your OIDC role
         - arn:aws:iam::aws:policy/PowerUserAccess
       Policies:
         - PolicyName: IAMPermissions
@@ -97,6 +100,7 @@ Resources:
       Tags:
         - Key: Environment
           Value: !Ref Environment
+        # TODO: add project name
         - Key: Purpose
           Value: GitHubActions
 

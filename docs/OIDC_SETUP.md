@@ -20,11 +20,9 @@ First, deploy the GitHub OIDC Provider and IAM Role:
 ```
 
 This will:
-- Validate your GitHub configuration
-- Check AWS credentials and show account info  
 - Create a GitHub OIDC Provider (if one doesn't exist)
 - Create an IAM Role with necessary permissions
-- Output the Role ARN and detailed setup instructions
+- Output the Role ARN and setup instructions
 
 ### 2. Configure GitHub Repository Secrets
 
