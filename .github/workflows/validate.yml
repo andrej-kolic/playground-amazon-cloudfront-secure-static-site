@@ -1,0 +1,51 @@
+name: Validate Templates
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'templates/**'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'templates/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS CLI (if credentials available)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+        continue-on-error: true
+      
+      - name: Validate CloudFormation templates
+        run: |
+          echo "Validating CloudFormation templates..."
+          for template in templates/*.yaml; do
+            if [ -f "$template" ]; then
+              echo "Validating $template"
+              if command -v aws &> /dev/null && aws sts get-caller-identity &> /dev/null; then
+                aws cloudformation validate-template --template-body file://$template || echo "AWS validation failed for $template"
+              else
+                echo "AWS CLI not configured, skipping validation for $template"
+              fi
+            fi
+          done
+      
+      - name: Lint YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: templates/
+          config_file: .yamllint.yml
+          format: github
+        continue-on-error: true

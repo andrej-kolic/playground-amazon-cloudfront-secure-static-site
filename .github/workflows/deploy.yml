@@ -31,6 +31,7 @@ on:
         default: content
         type: choice
         options:
+          - oidc
           - infra
           - content
 
@@ -49,7 +50,8 @@ jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      id-token: write
+      contents: read
       issues: write
       pull-requests: write
     if: |
@@ -58,7 +60,7 @@ jobs:
       (
         github.event_name == 'workflow_dispatch' &&
         github.event.inputs.environment == 'dev' &&
-        contains(fromJSON('["infra", "content"]'), github.event.inputs.action)
+        contains(fromJSON('["oidc", "infra", "content"]'), github.event.inputs.action)
       )
     environment: development
     steps:
@@ -68,11 +70,11 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-dev
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Deploy to development
@@ -108,12 +110,15 @@ jobs:
   # Deploy to staging environment
   deploy-staging:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     if: |
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
       (
         github.event_name == 'workflow_dispatch' &&
         github.event.inputs.environment == 'staging' &&
-        contains(fromJSON('["infra", "content"]'), github.event.inputs.action)
+        contains(fromJSON('["oidc", "infra", "content"]'), github.event.inputs.action)
       )
     environment: staging
     steps:
@@ -123,11 +128,11 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-staging
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Deploy to staging
@@ -139,12 +144,13 @@ jobs:
   deploy-prod:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: write
     # needs: [validate, deploy-staging]
     if: |
       github.event_name == 'workflow_dispatch' &&
       github.event.inputs.environment == 'prod' &&
-      contains(fromJSON('["infra", "content"]'), github.event.inputs.action)
+      contains(fromJSON('["oidc", "infra", "content"]'), github.event.inputs.action)
     environment: production
     steps:
       - name: Checkout code
@@ -153,11 +159,11 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-production
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Deploy to production

@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GitHub OIDC Provider and IAM Role for GitHub Actions deployment'
+
+Parameters:
+  GitHubOrg:
+    Type: String
+    Description: 'GitHub organization or username'
+  GitHubRepo:
+    Type: String
+    Description: 'GitHub repository name'
+  Environment:
+    Type: String
+    Description: 'Environment name'
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+  OIDCProviderArn:
+    Type: String
+    Description: 'ARN of the GitHub OIDC Provider (if it already exists)'
+    Default: ''
+
+Conditions:
+  CreateOIDCProvider: !Equals [!Ref OIDCProviderArn, '']
+
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCIdentityProvider
+    Condition: CreateOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${AWS::StackName}-github-actions-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateOIDCProvider
+                - !Ref GitHubOIDCProvider
+                - !Ref OIDCProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+              StringLike:
+                'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubOrg}/${GitHubRepo}:*'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/PowerUserAccess
+      Policies:
+        - PolicyName: IAMPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:UpdateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:PassRole
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:ListAttachedRolePolicies
+                  - iam:ListRolePolicies
+                  - iam:CreatePolicy
+                  - iam:DeletePolicy
+                  - iam:GetPolicy
+                  - iam:GetPolicyVersion
+                  - iam:ListPolicyVersions
+                  - iam:CreatePolicyVersion
+                  - iam:DeletePolicyVersion
+                  - iam:SetDefaultPolicyVersion
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - sts:TagSession
+                Resource: '*'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: GitHubActions
+
+Outputs:
+  GitHubActionsRoleArn:
+    Description: 'ARN of the GitHub Actions IAM Role'
+    Value: !GetAtt GitHubActionsRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-GitHubActionsRoleArn'
+  
+  OIDCProviderArn:
+    Description: 'ARN of the GitHub OIDC Provider'
+    Value: !If
+      - CreateOIDCProvider
+      - !Ref GitHubOIDCProvider
+      - !Ref OIDCProviderArn
+    Export:
+      Name: !Sub '${AWS::StackName}-OIDCProviderArn'

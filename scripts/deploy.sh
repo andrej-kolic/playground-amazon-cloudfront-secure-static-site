@@ -25,8 +25,11 @@ get_config() {
 
     NAME=$(jq -r "._shared.name" "$CONFIG_FILE")
     REGION=$(jq -r "._shared.region" "$CONFIG_FILE")
+    GITHUB_ORG=$(jq -r "._shared.github.org" "$CONFIG_FILE")
+    GITHUB_REPO=$(jq -r "._shared.github.repo" "$CONFIG_FILE")
     PACKAGE_BUCKET="${NAME}-cf-templates-${REGION}"
     STACK_NAME="${NAME}-${ENVIRONMENT}"
+    OIDC_STACK_NAME="${NAME}-github-oidc"
 
     # Environment-specific config
     if ! jq -e ".${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
@@ -45,6 +48,9 @@ get_config() {
     print_debug "Name: $NAME"
     print_debug "Package Bucket: $PACKAGE_BUCKET"
     print_debug "Stack Name: $STACK_NAME"
+    print_debug "OIDC Stack Name: $OIDC_STACK_NAME"
+    print_debug "GitHub Org: $GITHUB_ORG"
+    print_debug "GitHub Repo: $GITHUB_REPO"
     print_debug "Region: $REGION"
     print_debug "Parameters: $PARAMETERS"
 }
@@ -70,6 +76,109 @@ package_artifacts() {
         print_error "Failed to package artifacts"
         exit 1
     fi
+}
+
+
+deploy_oidc() {
+    print_info "=== GitHub OIDC Setup for AWS ==="
+    print_info ""
+    print_info "Deploying GitHub OIDC Provider and Role..."
+    
+    # Validate GitHub configuration
+    if [[ "$GITHUB_ORG" == "null" ]] || [[ "$GITHUB_REPO" == "null" ]] || [[ -z "$GITHUB_ORG" ]] || [[ -z "$GITHUB_REPO" ]]; then
+        print_error "GitHub organization and repository must be configured in deploy-config.json"
+        print_error "Expected format:"
+        print_error '{
+  "_shared": {
+    "github": {
+      "org": "your-github-org",
+      "repo": "your-repo-name"
+    }
+  }
+}'
+        exit 1
+    fi
+    
+    print_info "Configuration:"
+    print_info "  GitHub Org: $GITHUB_ORG"
+    print_info "  GitHub Repo: $GITHUB_REPO"
+    print_info "  AWS Region: $REGION"
+    print_info "  Stack Name: $OIDC_STACK_NAME"
+    print_info ""
+    
+    # Check AWS credentials
+    print_info "Checking AWS credentials..."
+    if ! aws sts get-caller-identity > /dev/null 2>&1; then
+        print_error "AWS credentials not configured. Please run 'aws configure' first."
+        exit 1
+    fi
+    
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+    print_info "AWS Account ID: $ACCOUNT_ID"
+    print_info ""
+    
+    # Check if OIDC provider already exists
+    print_info "Checking for existing OIDC providers..."
+    EXISTING_OIDC_ARN=""
+    if aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[?ends_with(Arn, `token.actions.githubusercontent.com`)].Arn' --output text | grep -q "arn:aws:iam"; then
+        EXISTING_OIDC_ARN=$(aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[?ends_with(Arn, `token.actions.githubusercontent.com`)].Arn' --output text)
+        print_info "Found existing OIDC provider: $EXISTING_OIDC_ARN"
+    else
+        print_info "No existing OIDC provider found. Will create a new one."
+    fi
+    print_info ""
+    
+    # Deploy OIDC stack
+    print_info "Deploying OIDC CloudFormation stack..."
+    if ! aws cloudformation deploy \
+        --region $REGION \
+        --stack-name $OIDC_STACK_NAME \
+        --template-file ${ROOT_DIR}/templates/github-oidc.yaml \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --parameter-overrides \
+            GitHubOrg=$GITHUB_ORG \
+            GitHubRepo=$GITHUB_REPO \
+            Environment=$ENVIRONMENT \
+            OIDCProviderArn="$EXISTING_OIDC_ARN" \
+        --tags Solution=ACFS3 Environment=$ENVIRONMENT Component=OIDC
+    then
+        print_error "Failed to deploy OIDC infrastructure"
+        exit 1
+    fi
+    
+    # Get the role ARN for output
+    GITHUB_ROLE_ARN=$(aws cloudformation describe-stacks \
+        --stack-name "$OIDC_STACK_NAME" \
+        --region "$REGION" \
+        --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
+        --output text 2>/dev/null)
+    
+    OIDC_PROVIDER_ARN=$(aws cloudformation describe-stacks \
+        --stack-name "$OIDC_STACK_NAME" \
+        --region "$REGION" \
+        --query 'Stacks[0].Outputs[?OutputKey==`OIDCProviderArn`].OutputValue' \
+        --output text 2>/dev/null)
+    
+    print_info ""
+    print_success "=== OIDC Setup Complete! ==="
+    print_info ""
+    print_info "GitHub Actions Role ARN:"
+    print_info "  $GITHUB_ROLE_ARN"
+    print_info ""
+    print_info "OIDC Provider ARN:"
+    print_info "  $OIDC_PROVIDER_ARN"
+    print_info ""
+    print_info "=== Next Steps ==="
+    print_info ""
+    print_info "1. Add the following secret to your GitHub repository:"
+    print_info "   Name: AWS_ROLE_ARN"
+    print_info "   Value: $GITHUB_ROLE_ARN"
+    print_info ""
+    print_info "2. Go to: https://github.com/$GITHUB_ORG/$GITHUB_REPO/settings/secrets/actions"
+    print_info ""
+    print_info "3. Click 'New repository secret' and add the secret"
+    print_info ""
+    print_info "4. Your GitHub Actions workflows can now use OIDC authentication!"
 }
 
 
@@ -194,6 +303,12 @@ main() {
             get_config
             print_success "Test action completed successfully."
             ;;
+        "oidc")
+            check_dependencies
+            get_config
+            deploy_oidc
+            print_success "OIDC deployment completed!"
+            ;;
         "infra")
             check_dependencies
             get_config
@@ -216,6 +331,7 @@ main() {
             ;;
         *)
             print_error "Unknown action: $ACTION"
+            print_info "Available actions: test, oidc, infra, content, outputs"
             exit 1
             ;;
     esac    

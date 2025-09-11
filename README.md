@@ -60,11 +60,59 @@ You must have a registered domain name, such as example.com, and point it to a R
 
 > :⚠️ This template can only be deployed in the `us-east-1` region
 
-To deploy the solution, you use [AWS CloudFormation](https://aws.amazon.com/cloudformation). You can use the CloudFormation console, or download the CloudFormation template to deploy it on your own.
+To deploy the solution, you can use several methods:
+
+1. **GitHub Actions with OIDC (Recommended)** - Secure automated deployment
+2. **AWS CloudFormation Console** - Manual deployment through AWS Console  
+3. **AWS CLI** - Command line deployment
 
 > **Note:** You must have IAM permissions to launch CloudFormation templates that create IAM roles, and to create all the AWS resources in the solution. Also, you are responsible for the cost of the AWS services used while running this solution. For more information about costs, see the pricing pages for each AWS service.
 
-### Use the CloudFormation console
+### Method 1: GitHub Actions with OIDC (Recommended)
+
+This method uses OpenID Connect (OIDC) for secure authentication without storing long-lived AWS credentials in GitHub.
+
+**Prerequisites:**
+- Forked repository with GitHub Actions enabled
+- AWS CLI configured with admin permissions for initial setup
+
+**Setup Steps:**
+
+1. **Configure the deployment settings** in `deploy-config.json`:
+   ```json
+   {
+     "_shared": {
+       "name": "your-project-name",
+       "region": "us-east-1",
+       "github": {
+         "org": "your-github-username",
+         "repo": "your-repo-name"
+       }
+     },
+     "dev": {
+       "parameters": {
+         "DomainName": "example.com",
+         "SubDomain": "dev",
+         "Environment": "dev",
+         "HostedZoneId": "Z1234567890ABC",
+         "CreateApex": "no"
+       }
+     }
+   }
+   ```
+
+2. **Deploy OIDC infrastructure**:
+   ```bash
+   ./scripts/deploy.sh dev oidc
+   ```
+
+3. **Add GitHub Secret**: Add the outputted Role ARN to your GitHub repository secrets as `AWS_ROLE_ARN`
+
+4. **Deploy via GitHub Actions**: Use the workflow dispatch or push to trigger deployment
+
+For detailed OIDC setup instructions, see [docs/OIDC_SETUP.md](docs/OIDC_SETUP.md).
+
+### Method 2: Use the CloudFormation console
 
 **To deploy the solution using the CloudFormation console**
 
@@ -106,7 +154,7 @@ To deploy the solution, you use [AWS CloudFormation](https://aws.amazon.com/clou
    > **Note:** Make sure to choose the bucket with **s3bucketroot** in its name, not **s3bucketlogs**. The bucket with **s3bucketroot** in its name contains the content. The one with **s3bucketlogs** contains only log files.
 1. In the bucket, delete the default content, then upload your own.
 
-### Download the CloudFormation template
+### Method 3: Download the CloudFormation template
 
 To download the CloudFormation template to deploy on your own, for example by [using the AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/create-stack.html), go to:
 
