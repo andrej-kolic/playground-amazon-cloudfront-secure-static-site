@@ -16,7 +16,7 @@ First, deploy the GitHub OIDC Provider and IAM Role:
 
 ```bash
 # Deploy OIDC infrastructure
-./scripts/deploy.sh dev oidc
+./scripts/deploy.sh oidc
 ```
 
 This will:

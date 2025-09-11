@@ -80,7 +80,7 @@ jobs:
       - name: Deploy to development
         run: |
           action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh dev $action
+          ./scripts/deploy.sh $action dev
 
       - name: Comment PR with deployment info
         if: github.event_name == 'pull_request'
@@ -89,7 +89,7 @@ jobs:
           script: |
             const { execSync } = require('child_process');
             try {
-              const output = execSync('./scripts/deploy.sh dev outputs', { encoding: 'utf8' });
+              const output = execSync('./scripts/deploy.sh outputs dev', { encoding: 'utf8' });
               console.log('outputs:\n', output);
 
               const websiteUrl = output.match(/Website URL: (https?:\/\/[^\s]+)/);
@@ -138,7 +138,7 @@ jobs:
       - name: Deploy to staging
         run: |
           action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh staging $action
+          ./scripts/deploy.sh $action staging
 
   # Deploy to production environment
   deploy-prod:
@@ -169,7 +169,7 @@ jobs:
       - name: Deploy to production
         run: |
           action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh prod $action
+          ./scripts/deploy.sh $action prod
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2

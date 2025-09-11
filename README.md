@@ -103,7 +103,7 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
 
 2. **Deploy OIDC infrastructure**:
    ```bash
-   ./scripts/deploy.sh dev oidc
+   ./scripts/deploy.sh oidc
    ```
 
 3. **Add GitHub Secret**: Add the outputted Role ARN to your GitHub repository secrets as `AWS_ROLE_ARN`

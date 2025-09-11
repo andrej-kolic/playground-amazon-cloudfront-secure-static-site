@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Deploy script for AWS CloudFormation Static Site
+# Usage: ./deploy.sh <action> <environment>
+# Arguments:
+#   action      - Deployment action: test, oidc, infra, content, outputs
+#   environment - Target environment: dev, staging, prod
+
 SCRIPTS_DIR=$(dirname "$0")
 ROOT_DIR=$(dirname "$0")/..
 
@@ -9,8 +15,8 @@ source "$SCRIPTS_DIR/helpers.sh"
 export AWS_PAGER=""
 
 # Default values
-ENVIRONMENT=${1:-dev}
-ACTION=${2:-content}
+ACTION=${1:-content}
+ENVIRONMENT=${2:-dev}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
 
 
@@ -282,7 +288,9 @@ main() {
             ;;
         *)
             print_error "Unknown action: $ACTION"
+            print_info "Usage: $0 <action> <environment>"
             print_info "Available actions: test, oidc, infra, content, outputs"
+            print_info "Available environments: dev, staging, prod"
             exit 1
             ;;
     esac    
