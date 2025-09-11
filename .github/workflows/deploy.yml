@@ -52,6 +52,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      id-token: write
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
       (github.event_name == 'pull_request' && github.head_ref == 'develop') ||
@@ -65,15 +66,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log Environment
-        uses: ./.github/actions/log-env
+      # TODO: comment out after debugging
+      - name: Debug OIDC
+        run: |
+          echo "GitHub Actor: ${{ github.actor }}"
+          echo "GitHub Repository: ${{ github.repository }}"
+          echo "GitHub Repository Owner: ${{ github.repository_owner }}"
+          echo "GitHub Ref: ${{ github.ref }}"
+          echo "GitHub SHA: ${{ github.sha }}"
+          echo "GitHub Event Name: ${{ github.event_name }}"
+          echo "GitHub Head Ref: ${{ github.head_ref }}"
+          echo "Environment: development"
+          echo "Role ARN exists: ${{ secrets.AWS_ROLE_ARN_DEV != '' }}"
+          echo "Role ARN length: ${{ secrets.AWS_ROLE_ARN_DEV && 'set' || 'not set' }}"
+          echo "Expected subject claim: repo:${{ github.repository }}:environment:development"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-session-name: GitHubActions-${{ github.run_id }}
 
       - name: Deploy to development
         run: |
@@ -108,6 +121,8 @@ jobs:
   # Deploy to staging environment
   deploy-staging:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     if: |
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
       (
@@ -126,8 +141,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Deploy to staging
@@ -140,6 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     # needs: [validate, deploy-staging]
     if: |
       github.event_name == 'workflow_dispatch' &&
@@ -156,8 +171,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Deploy to production

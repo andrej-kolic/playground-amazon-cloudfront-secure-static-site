@@ -28,6 +28,9 @@ get_config() {
     PACKAGE_BUCKET="${NAME}-cf-templates-${REGION}"
     STACK_NAME="${NAME}-${ENVIRONMENT}"
 
+    GITHUB_ORG=$(jq -r "._shared.GitHubOrg" "$CONFIG_FILE")
+    GITHUB_REPO=$(jq -r "._shared.GitHubRepo" "$CONFIG_FILE")
+
     # Environment-specific config
     if ! jq -e ".${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
         print_error "Configuration for environment '${ENVIRONMENT}' not found in ${CONFIG_FILE}"
@@ -161,6 +164,57 @@ sync_site_content() {
 }
 
 
+deploy_iam() {
+    print_info "Deploying IAM roles for GitHub Actions..."
+
+    # Check if OIDC provider exists
+    if ! aws iam get-open-id-connect-provider --open-id-connect-provider-arn "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):oidc-provider/token.actions.githubusercontent.com" &>/dev/null; then
+        print_error "GitHub OIDC provider not found. Please create it first:"
+        print_info "Run: 
+        aws iam create-open-id-connect-provider \\
+          --url https://token.actions.githubusercontent.com \\
+          --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1 \\
+          --client-id-list sts.amazonaws.com"        
+        exit 1
+    fi
+
+    local IAM_PARAMETERS="
+        Environment=$ENVIRONMENT \
+        GitHubOrg=${GITHUB_ORG} \
+        GitHubRepo=${GITHUB_REPO} \
+        Name=${NAME} \
+    "
+
+    local IAM_STACK_NAME="${NAME}-iam-${ENVIRONMENT}"
+
+    if ! aws cloudformation deploy \
+        --region $REGION \
+        --stack-name $IAM_STACK_NAME \
+        --template-file ${ROOT_DIR}/templates/iam-roles.yaml \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --parameter-overrides $IAM_PARAMETERS \
+        --tags Solution=ACFS3 Environment=$ENVIRONMENT
+    then
+        print_error "Failed to deploy IAM roles"
+        exit 1
+    fi
+
+    # Get the role ARN
+    local ROLE_ARN=$(aws cloudformation describe-stacks \
+        --stack-name "$IAM_STACK_NAME" \
+        --region "$REGION" \
+        --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
+        --output text)
+
+    if [ -z "$ROLE_ARN" ]; then
+        print_warning "Could not retrieve IAM role ARN from stack outputs"
+    else
+        print_info "IAM Role ARN: $ROLE_ARN"
+        print_info "Add this ARN as a GitHub secret: AWS_ROLE_ARN_$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')"
+    fi
+}
+
+
 invalidate_cloudfront_cache() {
     print_info "Invalidating CloudFront cache..."
 
@@ -193,6 +247,12 @@ main() {
             check_dependencies
             get_config
             print_success "Test action completed successfully."
+            ;;
+        "iam")
+            check_dependencies
+            get_config
+            deploy_iam
+            print_success "IAM roles deployment completed!"
             ;;
         "infra")
             check_dependencies
