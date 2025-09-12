@@ -1,10 +1,15 @@
 #!/bin/bash
 
 # Deploy script for AWS CloudFormation Static Site
-# Usage: ./deploy.sh <action> <environment>
+# Usage: ./deploy.sh <action> [environment]
 # Arguments:
 #   action      - Deployment action: test, oidc, infra, content, outputs
-#   environment - Target environment: dev, staging, prod
+#   environment - Target environment: dev, staging, prod (optional for 'oidc' action)
+#
+# Special Notes:
+#   - The 'oidc' action is a one-time setup that creates GitHub OIDC provider and IAM role
+#   - OIDC setup is account-level and doesn't require environment-specific configuration
+#   - For OIDC setup, the environment parameter is optional and defaults to 'shared'
 
 SCRIPTS_DIR=$(dirname "$0")
 ROOT_DIR=$(dirname "$0")/..
@@ -18,6 +23,12 @@ export AWS_PAGER=""
 ACTION=${1:-content}
 ENVIRONMENT=${2:-dev}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
+
+# For OIDC action, environment parameter is optional and used mainly for tagging
+if [ "$ACTION" = "oidc" ] && [ -z "$2" ]; then
+    ENVIRONMENT="shared"
+    print_info "OIDC action detected. Using 'shared' as environment (OIDC is account-level setup)."
+fi
 
 
 get_config() {
@@ -263,8 +274,15 @@ main() {
         "oidc")
             check_dependencies
             get_config
+            print_info "⚠️  OIDC setup is a one-time, account-level operation."
+            print_info "   It creates GitHub OIDC provider and IAM role for secure authentication."
+            print_info "   Environment parameter is used only for resource tagging."
             deploy_oidc
             print_success "OIDC deployment completed!"
+            print_info "📋 Next steps:"
+            print_info "   1. Copy the AWS_ROLE_ARN value from the output above"
+            print_info "   2. Add it as 'AWS_ROLE_ARN' secret in your GitHub repository"
+            print_info "   3. You can now use OIDC authentication in GitHub Actions workflows"
             ;;
         "infra")
             check_dependencies
@@ -288,9 +306,18 @@ main() {
             ;;
         *)
             print_error "Unknown action: $ACTION"
-            print_info "Usage: $0 <action> <environment>"
-            print_info "Available actions: test, oidc, infra, content, outputs"
+            print_info "Usage: $0 <action> [environment]"
+            print_info "Available actions:"
+            print_info "  test     - Test configuration and dependencies"
+            print_info "  oidc     - Setup GitHub OIDC provider (one-time, account-level)"
+            print_info "  infra    - Deploy infrastructure"
+            print_info "  content  - Deploy website content"
+            print_info "  outputs  - Display stack outputs"
             print_info "Available environments: dev, staging, prod"
+            print_info ""
+            print_info "Notes:"
+            print_info "  - OIDC action: environment parameter is optional (defaults to 'shared')"
+            print_info "  - Other actions: environment parameter is required"
             exit 1
             ;;
     esac    

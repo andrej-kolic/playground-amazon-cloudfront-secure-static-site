@@ -1,0 +1,75 @@
+name: Setup GitHub OIDC Provider
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_setup:
+        description: 'Confirm OIDC setup (this is a one-time, account-level operation)'
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false # Don't cancel OIDC setup operations
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+
+jobs:
+  setup-oidc:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    if: github.event.inputs.confirm_setup == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log Environment
+        uses: ./.github/actions/log-env
+
+      - name: Configure AWS credentials (Admin access required for OIDC setup)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # Note: For initial OIDC setup, you need to use AWS access keys with admin permissions
+          # After setup is complete, you can use the OIDC role for subsequent deployments
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Setup GitHub OIDC Provider and Role
+        run: |
+          echo "🚀 Setting up GitHub OIDC Provider and IAM Role..."
+          echo "⚠️  This is a one-time, account-level operation that doesn't require environment-specific configuration."
+          ./scripts/deploy.sh oidc
+
+      - name: Output setup completion
+        run: |
+          echo "✅ OIDC setup completed successfully!"
+          echo ""
+          echo "📋 Next steps:"
+          echo "1. Copy the AWS_ROLE_ARN value from the script output above"
+          echo "2. Add it as a repository secret named 'AWS_ROLE_ARN' in your GitHub repository settings"
+          echo "3. Remove the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets (they're no longer needed)"
+          echo "4. You can now use the regular deployment workflow with OIDC authentication"
+          echo ""
+          echo "🔒 The OIDC provider allows secure, keyless authentication between GitHub Actions and AWS."
+
+  warn-if-not-confirmed:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm_setup != 'true'
+    steps:
+      - name: Warning message
+        run: |
+          echo "❌ OIDC setup was not confirmed."
+          echo ""
+          echo "ℹ️  This workflow sets up GitHub OIDC Provider for secure authentication with AWS."
+          echo "   It's a one-time operation that creates AWS IAM resources in your account."
+          echo ""
+          echo "To proceed with setup:"
+          echo "1. Re-run this workflow"
+          echo "2. Check the 'Confirm OIDC setup' checkbox"
+          echo "3. Ensure you have AWS admin credentials configured as repository secrets"
+          exit 1

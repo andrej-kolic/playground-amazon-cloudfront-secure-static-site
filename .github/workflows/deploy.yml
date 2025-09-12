@@ -31,7 +31,6 @@ on:
         default: content
         type: choice
         options:
-          - oidc
           - infra
           - content
 
@@ -60,7 +59,7 @@ jobs:
       (
         github.event_name == 'workflow_dispatch' &&
         github.event.inputs.environment == 'dev' &&
-        contains(fromJSON('["oidc", "infra", "content"]'), github.event.inputs.action)
+        contains(fromJSON('["infra", "content"]'), github.event.inputs.action)
       )
     environment: development
     steps:
@@ -118,7 +117,7 @@ jobs:
       (
         github.event_name == 'workflow_dispatch' &&
         github.event.inputs.environment == 'staging' &&
-        contains(fromJSON('["oidc", "infra", "content"]'), github.event.inputs.action)
+        contains(fromJSON('["infra", "content"]'), github.event.inputs.action)
       )
     environment: staging
     steps:
@@ -150,7 +149,7 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' &&
       github.event.inputs.environment == 'prod' &&
-      contains(fromJSON('["oidc", "infra", "content"]'), github.event.inputs.action)
+      contains(fromJSON('["infra", "content"]'), github.event.inputs.action)
     environment: production
     steps:
       - name: Checkout code

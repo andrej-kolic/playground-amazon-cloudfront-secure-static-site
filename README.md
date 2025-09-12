@@ -101,14 +101,22 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
    }
    ```
 
-2. **Deploy OIDC infrastructure**:
+2. **One-time OIDC Setup**:
+   - Go to GitHub Actions in your repository
+   - Run the "Setup GitHub OIDC Provider" workflow
+   - Check the confirmation box and run the workflow
+   - Copy the outputted Role ARN and add it as repository secret `AWS_ROLE_ARN`
+   - Remove any existing AWS access key secrets (no longer needed)
+
+   Alternatively, you can run locally:
    ```bash
    ./scripts/deploy.sh oidc
    ```
 
-3. **Add GitHub Secret**: Add the outputted Role ARN to your GitHub repository secrets as `AWS_ROLE_ARN`
-
-4. **Deploy via GitHub Actions**: Use the workflow dispatch or push to trigger deployment
+3. **Deploy via GitHub Actions**: 
+   - Use the "Deploy Static Website" workflow
+   - Select environment (dev/staging/prod) and action (infra/content)
+   - Or push to trigger automatic deployment
 
 For detailed OIDC setup instructions, see [docs/OIDC_SETUP.md](docs/OIDC_SETUP.md).
 

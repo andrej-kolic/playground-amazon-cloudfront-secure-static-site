@@ -4,18 +4,31 @@ This guide explains how to set up OpenID Connect (OIDC) authentication for GitHu
 
 ## Prerequisites
 
-- AWS CLI configured with appropriate permissions
+- AWS CLI configured with admin permissions for initial setup
 - GitHub repository with Actions enabled
 - Admin access to the AWS account
 
-## Setup Steps
+## Setup Methods
 
-### 1. Deploy OIDC Resources
+### Method 1: GitHub Actions Workflow (Recommended)
 
-First, deploy the GitHub OIDC Provider and IAM Role:
+1. **Go to your GitHub repository**
+2. **Navigate to Actions tab**
+3. **Find "Setup GitHub OIDC Provider" workflow**
+4. **Click "Run workflow"**
+5. **Check the confirmation box** (acknowledges this is a one-time setup)
+6. **Run the workflow**
+7. **Copy the Role ARN** from the workflow output
+8. **Add it as repository secret** named `AWS_ROLE_ARN`
+
+> **Important**: For the initial OIDC setup, you need AWS access keys with admin permissions configured as repository secrets (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`). After setup is complete, you can remove these secrets as they're no longer needed.
+
+### Method 2: Local Script
+
+Alternatively, run the setup locally:
 
 ```bash
-# Deploy OIDC infrastructure
+# Deploy OIDC infrastructure (environment parameter is optional for OIDC)
 ./scripts/deploy.sh oidc
 ```
 
@@ -24,39 +37,18 @@ This will:
 - Create an IAM Role with necessary permissions
 - Output the Role ARN and setup instructions
 
-### 2. Configure GitHub Repository Secrets
+## What the Setup Creates
 
-1. Go to your GitHub repository
-2. Navigate to **Settings** > **Secrets and variables** > **Actions**
-3. Add a new repository secret:
-   - **Name**: `AWS_ROLE_ARN`
-   - **Value**: The Role ARN output from the previous step
+The OIDC setup is a **one-time, account-level operation** that creates:
 
-### 3. GitHub Actions Workflow
+1. **GitHub OIDC Identity Provider** (if not already present)
+   - Allows GitHub Actions to authenticate with AWS
+   - Account-wide resource (one per AWS account)
 
-The workflow is already configured to use OIDC. Each job includes:
-
-```yaml
-permissions:
-  id-token: write  # Required for OIDC
-  contents: read   # Required for checkout
-
-steps:
-  - name: Configure AWS credentials using OIDC
-    uses: aws-actions/configure-aws-credentials@v4
-    with:
-      role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-      role-session-name: github-actions-{environment}
-      aws-region: us-east-1
-```
-
-### 4. Deployment Options
-
-You can now deploy using GitHub Actions with three actions:
-
-- **oidc**: Deploy/update OIDC resources
-- **infra**: Deploy CloudFormation infrastructure
-- **content**: Deploy static content to S3
+2. **IAM Role for GitHub Actions**
+   - Repository-specific role for secure access
+   - Configured with necessary CloudFormation permissions
+   - Scoped to your specific GitHub repository
 
 ## Configuration
 
@@ -65,15 +57,24 @@ The OIDC setup uses configuration from `deploy-config.json`:
 ```json
 {
   "_shared": {
-    "name": "aw1",
+    "name": "your-project-name",
     "region": "us-east-1",
     "github": {
-      "org": "andrej-kolic",
-      "repo": "playground-amazon-cloudfront-secure-static-site"
+      "org": "your-github-username", 
+      "repo": "your-repo-name"
     }
   }
 }
 ```
+
+## Deployment Workflows
+
+After OIDC setup, use the **"Deploy Static Website"** workflow with these actions:
+
+- **infra**: Deploy CloudFormation infrastructure
+- **content**: Deploy static content to S3
+
+> **Note**: The `oidc` action has been moved to its own dedicated workflow to avoid confusion with environment-specific deployments.
 
 ## Security Features
 
@@ -84,9 +85,9 @@ The OIDC setup uses configuration from `deploy-config.json`:
 
 ## Troubleshooting
 
-### OIDC Provider Already Exists Error
+### OIDC Provider Already Exists
 
-If you get an error about the OIDC provider already existing, the script will automatically detect and use the existing provider.
+If an OIDC provider already exists, the script automatically detects and uses it. This is normal and expected.
 
 ### Permission Issues
 
@@ -108,7 +109,7 @@ Check that:
 To remove OIDC resources:
 
 ```bash
-aws cloudformation delete-stack --stack-name aw1-github-oidc --region us-east-1
+aws cloudformation delete-stack --stack-name your-project-name-github-oidc --region us-east-1
 ```
 
 ## References
