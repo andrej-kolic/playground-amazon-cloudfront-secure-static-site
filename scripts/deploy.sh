@@ -86,6 +86,7 @@ package_artifacts() {
 
 
 deploy_oidc() {
+    print_info "⚠️  OIDC setup is a one-time, account-level operation."
     print_info "Deploying GitHub OIDC Provider and Role..."
     
     # Check if OIDC provider already exists
@@ -123,9 +124,11 @@ deploy_oidc() {
         --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
         --output text 2>/dev/null)
     
+    print_success "OIDC deployment completed!"
     print_info "Add the following secret to your GitHub repository:"
     print_info "   Name: AWS_ROLE_ARN"
     print_info "   Value: $GITHUB_ROLE_ARN"
+    print_info "   Remove the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets (they're no longer needed)"
 }
 
 
@@ -142,6 +145,7 @@ deploy_infrastructure() {
         print_error "Failed to deploy infrastructure"
         exit 1
     fi
+    print_success "Infrastructure deployment completed!"
 }
 
 
@@ -263,15 +267,7 @@ main() {
         "oidc")
             check_dependencies
             get_config
-            print_info "⚠️  OIDC setup is a one-time, account-level operation."
-            print_info "   It creates GitHub OIDC provider and IAM role for secure authentication."
-            print_info "   Environment parameter is used only for resource tagging."
             deploy_oidc
-            print_success "OIDC deployment completed!"
-            print_info "📋 Next steps:"
-            print_info "   1. Copy the AWS_ROLE_ARN value from the output above"
-            print_info "   2. Add it as 'AWS_ROLE_ARN' secret in your GitHub repository"
-            print_info "   3. You can now use OIDC authentication in GitHub Actions workflows"
             ;;
         "infra")
             check_dependencies
@@ -279,7 +275,6 @@ main() {
             package_static
             package_artifacts
             deploy_infrastructure
-            print_success "Infrastructure deployment completed!"
             ;;
         "content")
             check_dependencies
@@ -303,10 +298,6 @@ main() {
             print_info "  content  - Deploy website content"
             print_info "  outputs  - Display stack outputs"
             print_info "Available environments: dev, staging, prod"
-            print_info ""
-            print_info "Notes:"
-            print_info "  - OIDC action: environment parameter is optional (defaults to 'shared')"
-            print_info "  - Other actions: environment parameter is required"
             exit 1
             ;;
     esac    
