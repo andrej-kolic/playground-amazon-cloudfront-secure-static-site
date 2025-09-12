@@ -25,10 +25,10 @@ ENVIRONMENT=${2:-dev}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
 
 # For OIDC action, environment parameter is optional and used mainly for tagging
-if [ "$ACTION" = "oidc" ] && [ -z "$2" ]; then
-    ENVIRONMENT="shared"
-    print_info "OIDC action detected. Using 'shared' as environment (OIDC is account-level setup)."
-fi
+# if [ "$ACTION" = "oidc" ] && [ -z "$2" ]; then
+#     ENVIRONMENT="shared"
+#     print_info "OIDC action detected. Using 'shared' as environment (OIDC is account-level setup)."
+# fi
 
 
 get_config() {
