@@ -56,12 +56,39 @@ The OIDC setup uses configuration from `deploy-config.json`:
 
 ```json
 {
-  "_shared": {
-    "name": "your-project-name",
-    "region": "us-east-1",
-    "github": {
-      "org": "your-github-username", 
-      "repo": "your-repo-name"
+  "name": "your-project-name",
+  "region": "us-east-1",
+  "github": {
+    "org": "your-github-username", 
+    "repo": "your-repo-name"
+  },
+  "environments": {
+    "dev": {
+      "parameters": {
+        "DomainName": "example.com",
+        "SubDomain": "dev",
+        "Environment": "dev",
+        "HostedZoneId": "Z1234567890ABC",
+        "CreateApex": "no"
+      }
+    },
+    "staging": {
+      "parameters": {
+        "DomainName": "example.com",
+        "SubDomain": "staging",
+        "Environment": "staging",
+        "HostedZoneId": "Z1234567890ABC",
+        "CreateApex": "no"
+      }
+    },
+    "prod": {
+      "parameters": {
+        "DomainName": "example.com",
+        "SubDomain": "prod",
+        "Environment": "prod",
+        "HostedZoneId": "Z1234567890ABC",
+        "CreateApex": "yes"
+      }
     }
   }
 }

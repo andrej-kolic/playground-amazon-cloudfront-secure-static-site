@@ -24,39 +24,28 @@ ACTION=${1:-content}
 ENVIRONMENT=${2:-dev}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
 
-# For OIDC action, environment parameter is optional and used mainly for tagging
-# if [ "$ACTION" = "oidc" ] && [ -z "$2" ]; then
-#     ENVIRONMENT="shared"
-#     print_info "OIDC action detected. Using 'shared' as environment (OIDC is account-level setup)."
-# fi
-
 
 get_config() {
     print_info "Loading configuration for environment: $ENVIRONMENT from $CONFIG_FILE"
 
-    # Shared config
-    if ! jq -e "._shared" "$CONFIG_FILE" > /dev/null 2>&1; then
-        print_error "Shared configuration not found in ${CONFIG_FILE}"
-        exit 1
-    fi
+    NAME=$(jq -r ".name" "$CONFIG_FILE")
+    REGION=$(jq -r ".region" "$CONFIG_FILE")
+    GITHUB_ORG=$(jq -r ".github.org" "$CONFIG_FILE")
+    GITHUB_REPO=$(jq -r ".github.repo" "$CONFIG_FILE")
 
-    NAME=$(jq -r "._shared.name" "$CONFIG_FILE")
-    REGION=$(jq -r "._shared.region" "$CONFIG_FILE")
-    GITHUB_ORG=$(jq -r "._shared.github.org" "$CONFIG_FILE")
-    GITHUB_REPO=$(jq -r "._shared.github.repo" "$CONFIG_FILE")
     PACKAGE_BUCKET="${NAME}-cf-templates-${REGION}"
     STACK_NAME="${NAME}-${ENVIRONMENT}"
     OIDC_STACK_NAME="${NAME}-github-oidc"
 
     # Environment-specific config
-    if ! jq -e ".${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
-        print_error "Configuration for environment '${ENVIRONMENT}' not found in ${CONFIG_FILE}"
+    if ! jq -e ".environments.${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
+        print_error "Configuration for environment '${ENVIRONMENT}' not found in .environments of ${CONFIG_FILE}"
         exit 1
     fi
 
     PARAMETERS=""
-    for param in $(jq -r ".${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
-        value=$(jq -r ".${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
+    for param in $(jq -r ".environments.${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
+        value=$(jq -r ".environments.${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
         PARAMETERS="${PARAMETERS} ${param}=${value}"
     done
 

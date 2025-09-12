@@ -79,27 +79,45 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
 **Setup Steps:**
 
 1. **Configure the deployment settings** in `deploy-config.json`:
-   ```json
-   {
-     "_shared": {
+    ```json
+    {
        "name": "your-project-name",
        "region": "us-east-1",
        "github": {
-         "org": "your-github-username",
-         "repo": "your-repo-name"
+          "org": "your-github-username",
+          "repo": "your-repo-name"
+       },
+       "environments": {
+          "dev": {
+             "parameters": {
+                "DomainName": "example.com",
+                "SubDomain": "dev",
+                "Environment": "dev",
+                "HostedZoneId": "Z1234567890ABC",
+                "CreateApex": "no"
+             }
+          },
+          "staging": {
+             "parameters": {
+                "DomainName": "example.com",
+                "SubDomain": "staging",
+                "Environment": "staging",
+                "HostedZoneId": "Z1234567890ABC",
+                "CreateApex": "no"
+             }
+          },
+          "prod": {
+             "parameters": {
+                "DomainName": "example.com",
+                "SubDomain": "prod",
+                "Environment": "prod",
+                "HostedZoneId": "Z1234567890ABC",
+                "CreateApex": "yes"
+             }
+          }
        }
-     },
-     "dev": {
-       "parameters": {
-         "DomainName": "example.com",
-         "SubDomain": "dev",
-         "Environment": "dev",
-         "HostedZoneId": "Z1234567890ABC",
-         "CreateApex": "no"
-       }
-     }
-   }
-   ```
+    }
+    ```
 
 2. **One-time OIDC Setup**:
    - Go to GitHub Actions in your repository
