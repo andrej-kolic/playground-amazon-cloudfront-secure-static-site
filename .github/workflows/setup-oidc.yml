@@ -1,0 +1,10 @@
+name: Dummy Trigger
+
+on:
+  workflow_dispatch:
+
+jobs:
+  dummy-job:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This workflow exists to enable workflow_dispatch."
