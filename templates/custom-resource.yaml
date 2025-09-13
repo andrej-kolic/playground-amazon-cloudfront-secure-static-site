@@ -3,14 +3,10 @@ Description: ACFS3 - Cert Provider with DNS validation
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  SubDomain:
-    Description: The part of a website address before your DomainName - e.g. www or img
+  ProjectName:
     Type: String
-    Default: www
-    AllowedPattern: ^[^.]*$
-  DomainName:
-    Description: The part of a website address after your SubDomain - e.g. example.com
-    Type: String
+    Description: Name of the project/application
+    AllowedPattern: ^[a-z0-9\-]{3,20}$
   Environment:
     Type: String
     Description: 'Environment name'
@@ -19,29 +15,19 @@ Parameters:
       - staging
       - prod
 
-Conditions:
-  SubDomainExists: !Not [!Equals [!Ref SubDomain, ""]]
-
 Resources:
   CopyCustomResource:
     Type: 'AWS::CloudFormation::CustomResource'
     Properties:
       ServiceToken: !GetAtt CopyFunction.Arn 
       ServiceTimeout: 30
+      PhysicalResourceId: !Sub '${ProjectName}-${Environment}-copy-custom-resource'
 
   S3BucketLogs:
     Type: AWS::S3::Bucket
     # DeletionPolicy: Retain
     Properties:
-      BucketName: !Sub 
-        # TODO: see if we can use name + environment instead of fullDomain
-        - '${FullDomain}-logs-${AWS::AccountId}-${AWS::Region}'
-        
-        # TODO: extract if possible
-        - FullDomain: !If
-            - SubDomainExists
-            - !Sub '${SubDomain}.${DomainName}'
-            - !Ref DomainName
+      BucketName: !Sub '${ProjectName}-${Environment}-logs-${AWS::AccountId}-${AWS::Region}'
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerPreferred
@@ -51,7 +37,7 @@ Resources:
               SSEAlgorithm: AES256
       Tags:
         - Key: Solution
-          Value: ACFS3
+          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
@@ -59,13 +45,7 @@ Resources:
     Type: AWS::S3::Bucket
     # DeletionPolicy: Retain
     Properties:
-      BucketName: !Sub 
-        # TODO: see if we can use name + environment instead of fullDomain
-        - '${FullDomain}-root-${AWS::AccountId}-${AWS::Region}'
-        - FullDomain: !If
-            - SubDomainExists
-            - !Sub '${SubDomain}.${DomainName}'
-            - !Ref DomainName
+      BucketName: !Sub '${ProjectName}-${Environment}-root-${AWS::AccountId}-${AWS::Region}'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -75,13 +55,14 @@ Resources:
         LogFilePrefix: 'origin/'
       Tags:
         - Key: Solution
-          Value: ACFS3
+          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
   CopyLayerVersion:
     Type: 'AWS::Serverless::LayerVersion'
     Properties:
+      LayerName: !Sub '${ProjectName}-${Environment}-copy-layer'
       ContentUri: ../witch.zip
       CompatibleRuntimes:
         - nodejs20.x
@@ -89,6 +70,7 @@ Resources:
   CopyRole:
     Type: 'AWS::IAM::Role'
     Properties:
+      RoleName: !Sub '${ProjectName}-${Environment}-copy-role'
       AssumeRolePolicyDocument:
         Statement:
           - Effect: Allow
@@ -120,6 +102,7 @@ Resources:
   CopyFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub '${ProjectName}-${Environment}-copy-function'
       CodeUri: ../www
       Environment:
         Variables:
@@ -131,7 +114,7 @@ Resources:
       Runtime: nodejs20.x
       Timeout: 300
       Tags:
-        Solution: ACFS3
+        Solution: !Ref ProjectName
         Environment: !Ref Environment
 
 

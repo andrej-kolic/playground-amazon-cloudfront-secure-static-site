@@ -2,19 +2,16 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'GitHub OIDC Provider and IAM Role for GitHub Actions deployment'
 
 Parameters:
+  ProjectName:
+    Type: String
+    Description: Name of the project/application
+    AllowedPattern: ^[a-z0-9\-]{3,20}$
   GitHubOrg:
     Type: String
     Description: 'GitHub organization or username'
   GitHubRepo:
     Type: String
     Description: 'GitHub repository name'
-  Environment:
-    Type: String
-    Description: 'Environment name'
-    AllowedValues:
-      - dev
-      - staging
-      - prod
   OIDCProviderArn:
     Type: String
     Description: 'ARN of the GitHub OIDC Provider (if it already exists)'
@@ -38,7 +35,7 @@ Resources:
   GitHubActionsRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${AWS::StackName}-github-actions-role'
+      RoleName: !Sub '${ProjectName}-github-actions-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -98,11 +95,8 @@ Resources:
                   - sts:TagSession
                 Resource: '*'
       Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        # TODO: add project name
-        - Key: Purpose
-          Value: GitHubActions
+        - Key: Solution
+          Value: !Ref ProjectName
 
 Outputs:
   GitHubActionsRoleArn:

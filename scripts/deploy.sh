@@ -43,7 +43,7 @@ get_config() {
         exit 1
     fi
 
-    PARAMETERS=""
+    PARAMETERS="ProjectName=${NAME} Environment=${ENVIRONMENT}"
     for param in $(jq -r ".environments.${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
         value=$(jq -r ".environments.${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
         PARAMETERS="${PARAMETERS} ${param}=${value}"
@@ -109,9 +109,8 @@ deploy_oidc() {
         --parameter-overrides \
             GitHubOrg=$GITHUB_ORG \
             GitHubRepo=$GITHUB_REPO \
-            Environment=$ENVIRONMENT \
             OIDCProviderArn="$EXISTING_OIDC_ARN" \
-        --tags Solution=ACFS3 Environment=$ENVIRONMENT Component=OIDC
+        --tags Solution=$NAME Environment=$ENVIRONMENT Component=OIDC
     then
         print_error "Failed to deploy OIDC infrastructure"
         exit 1
@@ -260,6 +259,7 @@ main() {
     # Execute action
     case $ACTION in
         "test")
+            print_info "Running test action..."
             check_dependencies
             get_config
             print_success "Test action completed successfully."
