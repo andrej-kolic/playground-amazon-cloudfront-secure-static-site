@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Deploy script for AWS CloudFormation Static Site
+# Usage: ./deploy.sh <action> [environment]
+# Arguments:
+#   action      - Deployment action: test, oidc, infra, content, outputs
+#   environment - Target environment: dev, staging, prod (optional for 'oidc' action)
+#
+# Special Notes:
+#   - The 'oidc' action is a one-time setup that creates GitHub OIDC provider and IAM role
+#   - OIDC setup is account-level and doesn't require environment-specific configuration
+#   - For OIDC setup, the environment parameter is optional and defaults to 'shared'
+
 SCRIPTS_DIR=$(dirname "$0")
 ROOT_DIR=$(dirname "$0")/..
 
@@ -9,34 +20,32 @@ source "$SCRIPTS_DIR/helpers.sh"
 export AWS_PAGER=""
 
 # Default values
-ENVIRONMENT=${1:-dev}
-ACTION=${2:-content}
+ACTION=${1:-content}
+ENVIRONMENT=${2:-dev}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
 
 
 get_config() {
     print_info "Loading configuration for environment: $ENVIRONMENT from $CONFIG_FILE"
 
-    # Shared config
-    if ! jq -e "._shared" "$CONFIG_FILE" > /dev/null 2>&1; then
-        print_error "Shared configuration not found in ${CONFIG_FILE}"
-        exit 1
-    fi
+    NAME=$(jq -r ".name" "$CONFIG_FILE")
+    REGION=$(jq -r ".region" "$CONFIG_FILE")
+    GITHUB_ORG=$(jq -r ".github.org" "$CONFIG_FILE")
+    GITHUB_REPO=$(jq -r ".github.repo" "$CONFIG_FILE")
 
-    NAME=$(jq -r "._shared.name" "$CONFIG_FILE")
-    REGION=$(jq -r "._shared.region" "$CONFIG_FILE")
     PACKAGE_BUCKET="${NAME}-cf-templates-${REGION}"
     STACK_NAME="${NAME}-${ENVIRONMENT}"
+    OIDC_STACK_NAME="${NAME}-github-oidc"
 
     # Environment-specific config
-    if ! jq -e ".${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
-        print_error "Configuration for environment '${ENVIRONMENT}' not found in ${CONFIG_FILE}"
+    if ! jq -e ".environments.${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
+        print_error "Configuration for environment '${ENVIRONMENT}' not found in .environments of ${CONFIG_FILE}"
         exit 1
     fi
 
-    PARAMETERS=""
-    for param in $(jq -r ".${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
-        value=$(jq -r ".${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
+    PARAMETERS="ProjectName=${NAME} Environment=${ENVIRONMENT}"
+    for param in $(jq -r ".environments.${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
+        value=$(jq -r ".environments.${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
         PARAMETERS="${PARAMETERS} ${param}=${value}"
     done
 
@@ -45,6 +54,9 @@ get_config() {
     print_debug "Name: $NAME"
     print_debug "Package Bucket: $PACKAGE_BUCKET"
     print_debug "Stack Name: $STACK_NAME"
+    print_debug "OIDC Stack Name: $OIDC_STACK_NAME"
+    print_debug "GitHub Org: $GITHUB_ORG"
+    print_debug "GitHub Repo: $GITHUB_REPO"
     print_debug "Region: $REGION"
     print_debug "Parameters: $PARAMETERS"
 }
@@ -73,6 +85,52 @@ package_artifacts() {
 }
 
 
+deploy_oidc() {
+    print_info "⚠️  OIDC setup is a one-time, account-level operation."
+    print_info "Deploying GitHub OIDC Provider and Role..."
+    
+    # Check if OIDC provider already exists
+    print_debug "Checking for existing OIDC providers..."
+    EXISTING_OIDC_ARN=""
+    if aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[?ends_with(Arn, `token.actions.githubusercontent.com`)].Arn' --output text | grep -q "arn:aws:iam"; then
+        EXISTING_OIDC_ARN=$(aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[?ends_with(Arn, `token.actions.githubusercontent.com`)].Arn' --output text)
+        print_debug "Found existing OIDC provider: $EXISTING_OIDC_ARN"
+    else
+        print_debug "No existing OIDC provider found. Will create a new one."
+    fi
+    
+    # Deploy OIDC stack
+    print_debug "Deploying OIDC CloudFormation stack..."
+    if ! aws cloudformation deploy \
+        --region $REGION \
+        --stack-name $OIDC_STACK_NAME \
+        --template-file ${ROOT_DIR}/templates/github-oidc.yaml \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --parameter-overrides \
+            GitHubOrg=$GITHUB_ORG \
+            GitHubRepo=$GITHUB_REPO \
+            OIDCProviderArn="$EXISTING_OIDC_ARN" \
+        --tags Solution=$NAME Environment=$ENVIRONMENT Component=OIDC
+    then
+        print_error "Failed to deploy OIDC infrastructure"
+        exit 1
+    fi
+    
+    # Get the role ARN for output
+    GITHUB_ROLE_ARN=$(aws cloudformation describe-stacks \
+        --stack-name "$OIDC_STACK_NAME" \
+        --region "$REGION" \
+        --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
+        --output text 2>/dev/null)
+    
+    print_success "OIDC deployment completed!"
+    print_info "Add the following secret to your GitHub repository:"
+    print_info "   Name: AWS_ROLE_ARN"
+    print_info "   Value: $GITHUB_ROLE_ARN"
+    print_info "   Remove the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets (they're no longer needed)"
+}
+
+
 deploy_infrastructure() {
     print_info "Deploying infrastructure..."
     if ! aws cloudformation deploy \
@@ -86,6 +144,7 @@ deploy_infrastructure() {
         print_error "Failed to deploy infrastructure"
         exit 1
     fi
+    print_success "Infrastructure deployment completed!"
 }
 
 
@@ -188,11 +247,27 @@ invalidate_cloudfront_cache() {
 
 
 main() {
+    # Check AWS credentials
+    print_info "Checking AWS credentials..."
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
+    if [ -z "$ACCOUNT_ID" ]; then
+        print_error "AWS credentials not configured. Please run 'aws configure' first."
+        exit 1
+    fi
+    print_debug "AWS Account ID: $ACCOUNT_ID"
+
+    # Execute action
     case $ACTION in
         "test")
+            print_info "Running test action..."
             check_dependencies
             get_config
             print_success "Test action completed successfully."
+            ;;
+        "oidc")
+            check_dependencies
+            get_config
+            deploy_oidc
             ;;
         "infra")
             check_dependencies
@@ -200,7 +275,6 @@ main() {
             package_static
             package_artifacts
             deploy_infrastructure
-            print_success "Infrastructure deployment completed!"
             ;;
         "content")
             check_dependencies
@@ -216,6 +290,14 @@ main() {
             ;;
         *)
             print_error "Unknown action: $ACTION"
+            print_info "Usage: $0 <action> [environment]"
+            print_info "Available actions:"
+            print_info "  test     - Test configuration and dependencies"
+            print_info "  oidc     - Setup GitHub OIDC provider (one-time, account-level)"
+            print_info "  infra    - Deploy infrastructure"
+            print_info "  content  - Deploy website content"
+            print_info "  outputs  - Display stack outputs"
+            print_info "Available environments: dev, staging, prod"
             exit 1
             ;;
     esac    

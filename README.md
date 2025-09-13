@@ -60,11 +60,85 @@ You must have a registered domain name, such as example.com, and point it to a R
 
 > :⚠️ This template can only be deployed in the `us-east-1` region
 
-To deploy the solution, you use [AWS CloudFormation](https://aws.amazon.com/cloudformation). You can use the CloudFormation console, or download the CloudFormation template to deploy it on your own.
+To deploy the solution, you can use several methods:
+
+1. **GitHub Actions with OIDC (Recommended)** - Secure automated deployment
+2. **AWS CloudFormation Console** - Manual deployment through AWS Console  
+3. **AWS CLI** - Command line deployment
 
 > **Note:** You must have IAM permissions to launch CloudFormation templates that create IAM roles, and to create all the AWS resources in the solution. Also, you are responsible for the cost of the AWS services used while running this solution. For more information about costs, see the pricing pages for each AWS service.
 
-### Use the CloudFormation console
+### Method 1: GitHub Actions with OIDC (Recommended)
+
+This method uses OpenID Connect (OIDC) for secure authentication without storing long-lived AWS credentials in GitHub.
+
+**Prerequisites:**
+- Forked repository with GitHub Actions enabled
+- AWS CLI configured with admin permissions for initial setup
+
+**Setup Steps:**
+
+1. **Configure the deployment settings** in `deploy-config.json`:
+    ```json
+    {
+       "name": "your-project-name",
+       "region": "us-east-1",
+       "github": {
+          "org": "your-github-username",
+          "repo": "your-repo-name"
+       },
+       "environments": {
+          "dev": {
+             "parameters": {
+                "DomainName": "example.com",
+                "SubDomain": "dev",
+                "Environment": "dev",
+                "HostedZoneId": "Z1234567890ABC",
+                "CreateApex": "no"
+             }
+          },
+          "staging": {
+             "parameters": {
+                "DomainName": "example.com",
+                "SubDomain": "staging",
+                "Environment": "staging",
+                "HostedZoneId": "Z1234567890ABC",
+                "CreateApex": "no"
+             }
+          },
+          "prod": {
+             "parameters": {
+                "DomainName": "example.com",
+                "SubDomain": "prod",
+                "Environment": "prod",
+                "HostedZoneId": "Z1234567890ABC",
+                "CreateApex": "yes"
+             }
+          }
+       }
+    }
+    ```
+
+2. **One-time OIDC Setup**:
+   - Go to GitHub Actions in your repository
+   - Run the "Setup GitHub OIDC Provider" workflow
+   - Check the confirmation box and run the workflow
+   - Copy the outputted Role ARN and add it as repository secret `AWS_ROLE_ARN`
+   - Remove any existing AWS access key secrets (no longer needed)
+
+   Alternatively, you can run locally:
+   ```bash
+   ./scripts/deploy.sh oidc
+   ```
+
+3. **Deploy via GitHub Actions**: 
+   - Use the "Deploy Static Website" workflow
+   - Select environment (dev/staging/prod) and action (infra/content)
+   - Or push to trigger automatic deployment
+
+For detailed OIDC setup instructions, see [docs/OIDC_SETUP.md](docs/OIDC_SETUP.md).
+
+### Method 2: Use the CloudFormation console
 
 **To deploy the solution using the CloudFormation console**
 
@@ -106,7 +180,7 @@ To deploy the solution, you use [AWS CloudFormation](https://aws.amazon.com/clou
    > **Note:** Make sure to choose the bucket with **s3bucketroot** in its name, not **s3bucketlogs**. The bucket with **s3bucketroot** in its name contains the content. The one with **s3bucketlogs** contains only log files.
 1. In the bucket, delete the default content, then upload your own.
 
-### Download the CloudFormation template
+### Method 3: Download the CloudFormation template
 
 To download the CloudFormation template to deploy on your own, for example by [using the AWS CLI](https://docs.aws.amazon.com/cli/latest/reference/cloudformation/create-stack.html), go to:
 

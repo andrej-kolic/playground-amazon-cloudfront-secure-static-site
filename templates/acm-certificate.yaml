@@ -10,6 +10,10 @@ Parameters:
     Type: String
   HostedZoneId:
     Type: String
+  ProjectName:
+    Type: String
+    Description: Name of the project/application
+    AllowedPattern: ^[a-z0-9\-]{3,20}$
   Environment:
     Type: String
     Description: 'Environment name'
@@ -44,7 +48,7 @@ Resources:
       ValidationMethod: DNS
       Tags:
         - Key: Solution
-          Value: ACFS3
+          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
       

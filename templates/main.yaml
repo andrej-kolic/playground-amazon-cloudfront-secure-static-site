@@ -46,6 +46,10 @@ Parameters:
     Type: String
     Default: 'no'
     AllowedValues: ['yes', 'no']
+  ProjectName:
+    Type: String
+    Description: Name of the project/application
+    AllowedPattern: ^[a-z0-9\-]{3,20}$
   Environment:
     Type: String
     Description: 'Environment name'
@@ -60,12 +64,11 @@ Resources:
     Properties:
       TemplateURL: ./custom-resource.yaml
       Parameters:
-        SubDomain: !Ref SubDomain
-        DomainName: !Ref DomainName
+        ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Tags:
         - Key: Solution
-          Value: ACFS3
+          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
@@ -78,10 +81,11 @@ Resources:
         DomainName: !Ref DomainName
         CreateApex: !Ref CreateApex
         HostedZoneId: !Ref HostedZoneId
+        ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Tags:
         - Key: Solution
-          Value: ACFS3
+          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
@@ -99,10 +103,11 @@ Resources:
         S3BucketRootArn: !GetAtt CustomResourceStack.Outputs.S3BucketRootArn
         S3BucketLogs: !GetAtt CustomResourceStack.Outputs.S3BucketLogs
         S3BucketLogsName: !GetAtt CustomResourceStack.Outputs.S3BucketLogsName
+        ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Tags:
         - Key: Solution
-          Value: ACFS3
+          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
