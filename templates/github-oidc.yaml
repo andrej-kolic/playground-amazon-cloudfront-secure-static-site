@@ -137,6 +137,7 @@ Resources:
               - s3:GetBucketWebsite
               - s3:PutBucketWebsite
               - s3:DeleteBucketWebsite
+              - s3:PutBucketOwnershipControls
             Resource:
               - !Sub 'arn:aws:s3:::${ProjectName}-*'
               - !Sub 'arn:aws:s3:::${ProjectName}-*/*'
