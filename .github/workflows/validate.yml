@@ -32,24 +32,25 @@ jobs:
         continue-on-error: true
       
       - name: Validate CloudFormation templates
-        run: |
-          echo "Validating CloudFormation templates..."
-          for template in templates/*.yaml; do
-            if [ -f "$template" ]; then
-              echo "Validating $template"
-              if command -v aws &> /dev/null && aws sts get-caller-identity &> /dev/null; then
-                aws cloudformation validate-template --template-body file://$template || echo "AWS validation failed for $template"
-              else
-                echo "AWS CLI not configured, skipping validation for $template"
-              fi
-            fi
-          done
+        run: ./scripts/deploy.sh validate
+        # run: |
+        #   echo "Validating CloudFormation templates..."
+        #   for template in templates/*.yaml; do
+        #     if [ -f "$template" ]; then
+        #       echo "Validating $template"
+        #       if command -v aws &> /dev/null && aws sts get-caller-identity &> /dev/null; then
+        #         aws cloudformation validate-template --template-body file://$template || echo "AWS validation failed for $template"
+        #       else
+        #         echo "AWS CLI not configured, skipping validation for $template"
+        #       fi
+        #     fi
+        #   done
       
       - name: Lint YAML files
         # TODO: check this library
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: templates/
-          config_file: .yamllint.yml
+          # config_file: .yamllint.yml
           format: github
         continue-on-error: true

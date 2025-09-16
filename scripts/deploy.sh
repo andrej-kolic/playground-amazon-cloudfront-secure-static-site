@@ -245,6 +245,22 @@ invalidate_cloudfront_cache() {
 }
 
 
+validate_template() {
+    print_info "Validating CloudFormation template..."
+
+    for template in ${ROOT_DIR}/templates/*.yaml; do
+        if [ -f "$template" ]; then
+            print_debug "Validating $template"
+            aws cloudformation validate-template \
+                --template-body file://$template \
+                --region "$REGION"
+        fi
+    done
+
+    print_success "Template validation successful!"
+}
+
+
 main() {
     # Check AWS credentials
     print_info "Checking AWS credentials..."
@@ -262,6 +278,11 @@ main() {
             check_dependencies
             get_config
             print_success "Test action completed successfully."
+            ;;
+        "validate")
+            check_dependencies
+            get_config
+            validate_template
             ;;
         "oidc")
             check_dependencies
