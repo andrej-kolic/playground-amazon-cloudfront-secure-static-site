@@ -1,3 +1,4 @@
+#TODO: check
 name: Validate Templates
 
 on:
@@ -25,6 +26,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # TODO: extract variable
           aws-region: us-east-1
         continue-on-error: true
       
@@ -43,6 +45,7 @@ jobs:
           done
       
       - name: Lint YAML files
+        # TODO: check this library
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: templates/

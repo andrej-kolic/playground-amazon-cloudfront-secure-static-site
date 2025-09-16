@@ -9,7 +9,6 @@
 # Special Notes:
 #   - The 'oidc' action is a one-time setup that creates GitHub OIDC provider and IAM role
 #   - OIDC setup is account-level and doesn't require environment-specific configuration
-#   - For OIDC setup, the environment parameter is optional and defaults to 'shared'
 
 SCRIPTS_DIR=$(dirname "$0")
 ROOT_DIR=$(dirname "$0")/..

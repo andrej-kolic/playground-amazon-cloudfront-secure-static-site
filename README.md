@@ -56,6 +56,8 @@ For more information, see [Mozilla’s web security guidelines](https://infosec.
 
 You must have a registered domain name, such as example.com, and point it to a Route 53 hosted zone in the same AWS account in which you deploy this solution. For more information, see [Configuring Amazon Route 53 as your DNS service](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring.html).
 
+You can use `scripts/misc/create-hosted-zone.sh` to create Hosted Zone.
+
 ## Deploy the solution
 
 > :⚠️ This template can only be deployed in the `us-east-1` region
