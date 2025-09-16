@@ -100,6 +100,7 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
+          # CloudFormation actions require '*' because stack ARNs are not known in advance
           - Effect: Allow
             Action:
               - cloudformation:CreateStack
@@ -198,7 +199,12 @@ Resources:
               - lambda:DeleteFunction
               - lambda:InvokeFunction
               - lambda:ListFunctions
+              - lambda:PublishLayerVersion
             Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-*'
+          - Effect: Allow
+            Action:
+              - lambda:PublishLayerVersion
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:${ProjectName}-*'
           - Effect: Allow
             Action:
               - logs:CreateLogGroup
