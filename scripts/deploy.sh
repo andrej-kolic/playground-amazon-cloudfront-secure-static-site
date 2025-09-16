@@ -106,6 +106,7 @@ deploy_oidc() {
         --template-file ${ROOT_DIR}/templates/github-oidc.yaml \
         --capabilities CAPABILITY_NAMED_IAM \
         --parameter-overrides \
+            ProjectName=$NAME \
             GitHubOrg=$GITHUB_ORG \
             GitHubRepo=$GITHUB_REPO \
             OIDCProviderArn="$EXISTING_OIDC_ARN" \

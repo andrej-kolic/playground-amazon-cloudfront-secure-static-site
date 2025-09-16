@@ -70,7 +70,6 @@ Resources:
   CopyRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Sub '${ProjectName}-${Environment}-copy-role'
       AssumeRolePolicyDocument:
         Statement:
           - Effect: Allow
@@ -113,6 +112,7 @@ Resources:
       Role: !GetAtt CopyRole.Arn
       Runtime: nodejs20.x
       Timeout: 300
+      ReservedConcurrentExecutions: 5  # Limits to 5 concurrent executions
       Tags:
         Solution: !Ref ProjectName
         Environment: !Ref Environment

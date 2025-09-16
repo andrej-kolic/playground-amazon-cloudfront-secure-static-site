@@ -35,7 +35,6 @@ Resources:
   GitHubActionsRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${ProjectName}-github-actions-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -52,51 +51,166 @@ Resources:
               StringLike:
                 'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubOrg}/${GitHubRepo}:*'
       ManagedPolicyArns:
-        # Too permissive for production. Consider using more restrictive policies in real projects.
-        # TODO: Create a custom IAM policy granting only the permissions needed for CloudFormation deployments
-        # and attach this custom policy to your OIDC role
-        - arn:aws:iam::aws:policy/PowerUserAccess
-      Policies:
-        - PolicyName: IAMPermissions
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - iam:CreateRole
-                  - iam:UpdateRole
-                  - iam:DeleteRole
-                  - iam:GetRole
-                  - iam:PassRole
-                  - iam:PutRolePolicy
-                  - iam:DeleteRolePolicy
-                  - iam:GetRolePolicy
-                  - iam:AttachRolePolicy
-                  - iam:DetachRolePolicy
-                  - iam:ListAttachedRolePolicies
-                  - iam:ListRolePolicies
-                  - iam:CreatePolicy
-                  - iam:DeletePolicy
-                  - iam:GetPolicy
-                  - iam:GetPolicyVersion
-                  - iam:ListPolicyVersions
-                  - iam:CreatePolicyVersion
-                  - iam:DeletePolicyVersion
-                  - iam:SetDefaultPolicyVersion
-                  - iam:TagRole
-                  - iam:UntagRole
-                  - iam:ListRoleTags
-                  - iam:TagPolicy
-                  - iam:UntagPolicy
-                  - iam:ListPolicyTags
-                Resource: '*'
-              - Effect: Allow
-                Action:
-                  - sts:TagSession
-                Resource: '*'
+        - !Ref GitHubActionsPolicy
+      # Policies:
+      #   - PolicyName: IAMPermissions
+      #     PolicyDocument:
+      #       Version: '2012-10-17'
+      #       Statement:
+      #         - Effect: Allow
+      #           Action:
+      #             - iam:CreateRole
+      #             - iam:UpdateRole
+      #             - iam:DeleteRole
+      #             - iam:GetRole
+      #             - iam:PassRole
+      #             - iam:PutRolePolicy
+      #             - iam:DeleteRolePolicy
+      #             - iam:GetRolePolicy
+      #             - iam:AttachRolePolicy
+      #             - iam:DetachRolePolicy
+      #             - iam:ListAttachedRolePolicies
+      #             - iam:ListRolePolicies
+      #             - iam:CreatePolicy
+      #             - iam:DeletePolicy
+      #             - iam:GetPolicy
+      #             - iam:GetPolicyVersion
+      #             - iam:ListPolicyVersions
+      #             - iam:CreatePolicyVersion
+      #             - iam:DeletePolicyVersion
+      #             - iam:SetDefaultPolicyVersion
+      #             - iam:TagRole
+      #             - iam:UntagRole
+      #             - iam:ListRoleTags
+      #             - iam:TagPolicy
+      #             - iam:UntagPolicy
+      #             - iam:ListPolicyTags
+      #           Resource: '*'
+      #         - Effect: Allow
+      #           Action:
+      #             - sts:TagSession
+      #           Resource: '*'
       Tags:
         - Key: Solution
           Value: !Ref ProjectName
+
+  GitHubActionsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudformation:CreateStack
+              - cloudformation:UpdateStack
+              - cloudformation:DeleteStack
+              - cloudformation:DescribeStacks
+              - cloudformation:CreateChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:GetTemplate
+              - cloudformation:ValidateTemplate
+              - cloudformation:Package
+              - cloudformation:Deploy
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - s3:CreateBucket
+              - s3:DeleteBucket
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetBucketLocation
+              - s3:GetBucketVersioning
+              - s3:PutBucketVersioning
+              - s3:GetBucketEncryption
+              - s3:PutBucketEncryption
+              - s3:GetBucketPolicy
+              - s3:PutBucketPolicy
+              - s3:DeleteBucketPolicy
+              - s3:GetBucketLogging
+              - s3:PutBucketLogging
+              - s3:GetBucketWebsite
+              - s3:PutBucketWebsite
+              - s3:DeleteBucketWebsite
+            Resource:
+              - !Sub 'arn:aws:s3:::${ProjectName}-*'
+              - !Sub 'arn:aws:s3:::${ProjectName}-*/*'
+          - Effect: Allow
+            Action:
+              - route53:GetHostedZone
+              - route53:ListHostedZones
+              - route53:ChangeResourceRecordSets
+              - route53:ListResourceRecordSets
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - acm:RequestCertificate
+              - acm:DescribeCertificate
+              - acm:DeleteCertificate
+              - acm:ListCertificates
+              - acm:AddTagsToCertificate
+              - acm:RemoveTagsFromCertificate
+            Resource: !Sub 'arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/*'
+          - Effect: Allow
+            Action:
+              - cloudfront:CreateDistribution
+              - cloudfront:UpdateDistribution
+              - cloudfront:DeleteDistribution
+              - cloudfront:GetDistribution
+              - cloudfront:ListDistributions
+              - cloudfront:CreateInvalidation
+              - cloudfront:GetInvalidation
+              - cloudfront:ListInvalidations
+            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/*'
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
+          - Effect: Allow
+            Action:
+              - iam:CreateRole
+              - iam:DeleteRole
+              - iam:GetRole
+              - iam:UpdateRole
+              - iam:CreatePolicy
+              - iam:DeletePolicy
+              - iam:GetPolicy
+              - iam:AttachRolePolicy
+              - iam:DetachRolePolicy
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:GetRolePolicy
+              - iam:CreateInstanceProfile
+              - iam:DeleteInstanceProfile
+              - iam:AddRoleToInstanceProfile
+              - iam:RemoveRoleFromInstanceProfile
+            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ProjectName}-*'
+          - Effect: Allow
+            Action:
+              - lambda:CreateFunction
+              - lambda:UpdateFunctionCode
+              - lambda:UpdateFunctionConfiguration
+              - lambda:GetFunction
+              - lambda:DeleteFunction
+              - lambda:InvokeFunction
+              - lambda:ListFunctions
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-*'
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - logs:DescribeLogGroups
+              - logs:DescribeLogStreams
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-*:*'
+          - Effect: Allow
+            Action:
+              - sts:GetCallerIdentity
+            Resource: '*'
 
 Outputs:
   GitHubActionsRoleArn:
