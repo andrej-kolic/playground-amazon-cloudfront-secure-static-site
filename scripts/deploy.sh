@@ -138,7 +138,7 @@ deploy_infrastructure() {
         --template-file ${ROOT_DIR}/packaged.template \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
         --parameter-overrides $PARAMETERS \
-        --tags Solution=ACFS3 Environment=$ENVIRONMENT
+        --tags Solution=$NAME Environment=$ENVIRONMENT
     then
         print_error "Failed to deploy infrastructure"
         exit 1
