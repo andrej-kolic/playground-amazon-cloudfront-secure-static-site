@@ -100,7 +100,7 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-          # CloudFormation actions require '*' because stack ARNs are not known in advance
+          # CloudFormation actions require stack-specific ARNs for least privilege
           - Effect: Allow
             Action:
               - cloudformation:CreateStack
@@ -190,7 +190,7 @@ Resources:
               - iam:DeleteInstanceProfile
               - iam:AddRoleToInstanceProfile
               - iam:RemoveRoleFromInstanceProfile
-            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ProjectName}-*'
+            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
           - Effect: Allow
             Action:
               - lambda:CreateFunction
@@ -201,11 +201,11 @@ Resources:
               - lambda:InvokeFunction
               - lambda:ListFunctions
               - lambda:PublishLayerVersion
-            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-*'
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*'
           - Effect: Allow
             Action:
               - lambda:PublishLayerVersion
-            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:${ProjectName}-*'
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:*'
           - Effect: Allow
             Action:
               - logs:CreateLogGroup
@@ -213,7 +213,7 @@ Resources:
               - logs:PutLogEvents
               - logs:DescribeLogGroups
               - logs:DescribeLogStreams
-            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-*:*'
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*'
           - Effect: Allow
             Action:
               - sts:GetCallerIdentity
