@@ -140,6 +140,7 @@ Resources:
               - s3:PutBucketOwnershipControls
               - s3:PutBucketTagging
               - s3:GetBucketTagging
+              - s3:PutEncryptionConfiguration
             Resource:
               - !Sub 'arn:aws:s3:::${ProjectName}-*'
               - !Sub 'arn:aws:s3:::${ProjectName}-*/*'
