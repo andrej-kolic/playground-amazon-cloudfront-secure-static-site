@@ -99,8 +99,8 @@ Resources:
         Origins:
           - DomainName: !Ref 'S3BucketRootName'
             Id: !Sub '${ProjectName}-${Environment}-s3-origin'
-            S3OriginConfig: {}
             OriginAccessControlId: !Ref OriginAccessControl
+            S3OriginConfig: {}
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !Ref 'CertificateArn'
