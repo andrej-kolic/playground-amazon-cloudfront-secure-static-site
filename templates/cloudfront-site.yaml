@@ -115,9 +115,7 @@ Resources:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
-        # Name must be unique within account and follow naming restrictions
-        # Use a simple, clean naming pattern with minimal special characters
-        Name: !Sub '${ProjectName}-${Environment}-oac-${AWS::StackName}'
+        Name: 'aw1-staging-origin-access-control-v2'
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
