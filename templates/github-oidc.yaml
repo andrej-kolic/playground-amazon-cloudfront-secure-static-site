@@ -52,44 +52,6 @@ Resources:
                 'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubOrg}/${GitHubRepo}:*'
       ManagedPolicyArns:
         - !Ref GitHubActionsPolicy
-      # Policies:
-      #   - PolicyName: IAMPermissions
-      #     PolicyDocument:
-      #       Version: '2012-10-17'
-      #       Statement:
-      #         - Effect: Allow
-      #           Action:
-      #             - iam:CreateRole
-      #             - iam:UpdateRole
-      #             - iam:DeleteRole
-      #             - iam:GetRole
-      #             - iam:PassRole
-      #             - iam:PutRolePolicy
-      #             - iam:DeleteRolePolicy
-      #             - iam:GetRolePolicy
-      #             - iam:AttachRolePolicy
-      #             - iam:DetachRolePolicy
-      #             - iam:ListAttachedRolePolicies
-      #             - iam:ListRolePolicies
-      #             - iam:CreatePolicy
-      #             - iam:DeletePolicy
-      #             - iam:GetPolicy
-      #             - iam:GetPolicyVersion
-      #             - iam:ListPolicyVersions
-      #             - iam:CreatePolicyVersion
-      #             - iam:DeletePolicyVersion
-      #             - iam:SetDefaultPolicyVersion
-      #             - iam:TagRole
-      #             - iam:UntagRole
-      #             - iam:ListRoleTags
-      #             - iam:TagPolicy
-      #             - iam:UntagPolicy
-      #             - iam:ListPolicyTags
-      #           Resource: '*'
-      #         - Effect: Allow
-      #           Action:
-      #             - sts:TagSession
-      #           Resource: '*'
       Tags:
         - Key: Solution
           Value: !Ref ProjectName
@@ -141,15 +103,18 @@ Resources:
               - s3:PutBucketTagging
               - s3:GetBucketTagging
               - s3:PutEncryptionConfiguration
+              - s3:GetBucketAcl
+              - s3:PutBucketAcl
             Resource:
-              - !Sub 'arn:aws:s3:::${ProjectName}-*'
-              - !Sub 'arn:aws:s3:::${ProjectName}-*/*'
+              - !Sub 'arn:aws:s3:::*-*'
+              - !Sub 'arn:aws:s3:::*-*/*'
           - Effect: Allow
             Action:
               - route53:GetHostedZone
               - route53:ListHostedZones
               - route53:ChangeResourceRecordSets
               - route53:ListResourceRecordSets
+              - route53:GetChange
             Resource: '*'
           - Effect: Allow
             Action:
@@ -170,7 +135,25 @@ Resources:
               - cloudfront:CreateInvalidation
               - cloudfront:GetInvalidation
               - cloudfront:ListInvalidations
+              - cloudfront:TagResource
+              - cloudfront:UntagResource
             Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/*'
+          - Effect: Allow
+            Action:
+              - cloudfront:CreateOriginAccessControl
+              - cloudfront:UpdateOriginAccessControl
+              - cloudfront:DeleteOriginAccessControl
+              - cloudfront:GetOriginAccessControl
+              - cloudfront:ListOriginAccessControls
+            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:origin-access-control/*'
+          - Effect: Allow
+            Action:
+              - cloudfront:CreateResponseHeadersPolicy
+              - cloudfront:UpdateResponseHeadersPolicy
+              - cloudfront:DeleteResponseHeadersPolicy
+              - cloudfront:GetResponseHeadersPolicy
+              - cloudfront:ListResponseHeadersPolicies
+            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:response-headers-policy/*'
           - Effect: Allow
             Action:
               - iam:PassRole
@@ -193,6 +176,12 @@ Resources:
               - iam:DeleteInstanceProfile
               - iam:AddRoleToInstanceProfile
               - iam:RemoveRoleFromInstanceProfile
+              - iam:TagRole
+              - iam:UntagRole
+              - iam:ListRoleTags
+              - iam:TagPolicy
+              - iam:UntagPolicy
+              - iam:ListPolicyTags
             Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
           - Effect: Allow
             Action:
@@ -204,10 +193,16 @@ Resources:
               - lambda:InvokeFunction
               - lambda:ListFunctions
               - lambda:PublishLayerVersion
+              - lambda:TagResource
+              - lambda:UntagResource
+              - lambda:PutFunctionConcurrency
             Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*'
           - Effect: Allow
             Action:
               - lambda:PublishLayerVersion
+              - lambda:TagResource
+              - lambda:UntagResource
+              - lambda:GetLayerVersion
             Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:*'
           - Effect: Allow
             Action:
