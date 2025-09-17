@@ -100,7 +100,6 @@ Resources:
           - DomainName: !Ref 'S3BucketRootName'
             Id: !Sub '${ProjectName}-${Environment}-s3-origin'
             OriginAccessControlId: !Ref OriginAccessControl
-            S3OriginConfig: {}
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !Ref 'CertificateArn'
@@ -116,11 +115,9 @@ Resources:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
-        # Get a unique ID for the OAC Config name.
-        # Name must be unique within account
-        Name: !Sub
-          - ${ProjectName}-${Environment}-secure-static-site-${guid}
-          - guid: !Select [2, !Split ['/', !Ref 'AWS::StackId']]
+        # Name must be unique within account and follow naming restrictions
+        # Use a simple, clean naming pattern with minimal special characters
+        Name: !Sub '${ProjectName}-${Environment}-oac-${AWS::StackName}'
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
