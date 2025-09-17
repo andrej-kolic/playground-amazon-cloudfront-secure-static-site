@@ -99,8 +99,8 @@ Resources:
         Origins:
           - DomainName: !Ref 'S3BucketRootName'
             Id: !Sub '${ProjectName}-${Environment}-s3-origin'
-            OriginAccessControlId: !Ref OriginAccessControl
             S3OriginConfig: {}
+            OriginAccessControlId: !Ref OriginAccessControl
         PriceClass: 'PriceClass_All'
         ViewerCertificate:
           AcmCertificateArn: !Ref 'CertificateArn'
@@ -116,6 +116,7 @@ Resources:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
+        # TODO: fix naming to be unique within account
         Name: 'aw1-staging-origin-access-control-v2'
         OriginAccessControlOriginType: s3
         SigningBehavior: always
