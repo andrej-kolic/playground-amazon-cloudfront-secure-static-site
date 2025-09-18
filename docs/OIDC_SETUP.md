@@ -28,8 +28,8 @@ This guide explains how to set up OpenID Connect (OIDC) authentication for GitHu
 Alternatively, run the setup locally:
 
 ```bash
-# Deploy OIDC infrastructure (environment parameter is optional for OIDC)
-./scripts/deploy.sh oidc
+# Deploy OIDC infrastructure using dedicated script
+./scripts/oidc.sh
 ```
 
 This will:

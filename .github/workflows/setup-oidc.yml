@@ -40,10 +40,7 @@ jobs:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Setup GitHub OIDC Provider and Role
-        run: |
-          echo "🚀 Setting up GitHub OIDC Provider and IAM Role..."
-          echo "⚠️  This is a one-time, account-level operation that doesn't require environment-specific configuration."
-          ./scripts/deploy.sh oidc
+        run: ./scripts/oidc.sh
 
   warn-if-not-confirmed:
     runs-on: ubuntu-latest

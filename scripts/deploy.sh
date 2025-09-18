@@ -3,12 +3,8 @@
 # Deploy script for AWS CloudFormation Static Site
 # Usage: ./deploy.sh <action> [environment]
 # Arguments:
-#   action      - Deployment action: test, oidc, infra, content, outputs
-#   environment - Target environment: dev, staging, prod (optional for 'oidc' action)
-#
-# Special Notes:
-#   - The 'oidc' action is a one-time setup that creates GitHub OIDC provider and IAM role
-#   - OIDC setup is account-level and doesn't require environment-specific configuration
+#   action      - Deployment action: test, infra, content, outputs
+#   environment - Target environment: seedeploy-config.json for available environments
 
 SCRIPTS_DIR=$(dirname "$0")
 ROOT_DIR=$(dirname "$0")/..
@@ -97,48 +93,6 @@ package_artifacts() {
         print_error "Failed to package artifacts"
         exit 1
     fi
-}
-
-
-deploy_oidc() {
-    print_info "⚠️  OIDC setup is a one-time, account-level operation."
-    print_info "Deploying GitHub OIDC Provider and Role..."
-    
-    if [ -z "$OIDC_ARN" ]; then
-        print_debug "No existing OIDC provider ARN provided. A new OIDC provider will be created."
-    else
-        print_debug "Using provided existing OIDC provider ARN: $OIDC_ARN"
-    fi
-
-    print_debug "Deploying OIDC CloudFormation stack..."
-    if ! aws cloudformation deploy \
-        --region $REGION \
-        --stack-name $OIDC_STACK_NAME \
-        --template-file ${ROOT_DIR}/templates/github-oidc.yaml \
-        --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides \
-            ProjectName=$NAME \
-            GitHubOrg=$GITHUB_ORG \
-            GitHubRepo=$GITHUB_REPO \
-            OIDCProviderArn="$OIDC_ARN" \
-        --tags Solution=$NAME Environment=$ENVIRONMENT Component=OIDC
-    then
-        print_error "Failed to deploy OIDC infrastructure"
-        exit 1
-    fi
-    
-    # Get the role ARN for output
-    GITHUB_ROLE_ARN=$(aws cloudformation describe-stacks \
-        --stack-name "$OIDC_STACK_NAME" \
-        --region "$REGION" \
-        --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
-        --output text 2>/dev/null)
-    
-    print_success "OIDC deployment completed!"
-    print_info "Add the following secret to your GitHub repository:"
-    print_info "   Name: AWS_ROLE_ARN"
-    print_info "   Value: $GITHUB_ROLE_ARN"
-    print_info "   Remove the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY secrets (they're no longer needed)"
 }
 
 
@@ -287,9 +241,6 @@ main() {
         "validate")
             validate_template
             ;;
-        "oidc")
-            deploy_oidc
-            ;;
         "infra")
             package_static
             package_artifacts
@@ -305,14 +256,14 @@ main() {
             ;;
         *)
             print_error "Unknown action: $ACTION"
+            
             print_info "Usage: $0 <action> [environment]"
             print_info "Available actions:"
             print_info "  test     - Test configuration and dependencies"
-            print_info "  oidc     - Setup GitHub OIDC provider (one-time, account-level)"
             print_info "  infra    - Deploy infrastructure"
             print_info "  content  - Deploy website content"
             print_info "  outputs  - Display stack outputs"
-            print_info "Available environments: dev, staging, prod"
+            print_info "See deploy-config.json for available environments"
             exit 1
             ;;
     esac    

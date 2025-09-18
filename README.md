@@ -130,7 +130,7 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
 
    Alternatively, you can run locally:
    ```bash
-   ./scripts/deploy.sh oidc
+   ./scripts/oidc.sh
    ```
 
 3. **Deploy via GitHub Actions**: 
