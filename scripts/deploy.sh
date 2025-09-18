@@ -2,9 +2,6 @@
 
 # Deploy script for AWS CloudFormation Static Site
 # Usage: ./deploy.sh <action> [environment]
-# Arguments:
-#   action      - Deployment action: test, infra, content, outputs
-#   environment - Target environment: seedeploy-config.json for available environments
 
 SCRIPTS_DIR=$(dirname "$0")
 ROOT_DIR=$(dirname "$0")/..
@@ -227,6 +224,20 @@ validate_template() {
 }
 
 
+print_help() {
+    print_info "Usage: $0 <action> [environment]"
+    print_info ""
+    print_info "Available actions:"
+    print_info "  help     - Show this help message"
+    print_info "  validate - Validate template"
+    print_info "  infra    - Deploy infrastructure"
+    print_info "  content  - Deploy website content"
+    print_info "  outputs  - Display stack outputs"
+    print_info ""
+    print_info "See deploy-config.json for available environments"
+}
+
+
 main() {
     check_dependencies
     get_aws_account_id
@@ -234,9 +245,8 @@ main() {
 
     # Execute action
     case $ACTION in
-        "test")
-            print_info "Running test action..."
-            print_success "Test action completed successfully."
+        "help")
+            print_help
             ;;
         "validate")
             validate_template
@@ -256,17 +266,10 @@ main() {
             ;;
         *)
             print_error "Unknown action: $ACTION"
-            
-            print_info "Usage: $0 <action> [environment]"
-            print_info "Available actions:"
-            print_info "  test     - Test configuration and dependencies"
-            print_info "  infra    - Deploy infrastructure"
-            print_info "  content  - Deploy website content"
-            print_info "  outputs  - Display stack outputs"
-            print_info "See deploy-config.json for available environments"
+            print_help
             exit 1
             ;;
-    esac    
+    esac
 }
 
 main
