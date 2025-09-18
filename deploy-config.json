@@ -1,9 +1,10 @@
 {
   "name": "aw1",
   "region": "us-east-1",
-  "github": {
-    "org": "andrej-kolic",
-    "repo": "playground-amazon-cloudfront-secure-static-site"
+  "oidc": {
+    "oidc_arn": "",
+    "github_org": "andrej-kolic",
+    "github_repo": "playground-amazon-cloudfront-secure-static-site"
   },
   "environments": {
     "dev": {

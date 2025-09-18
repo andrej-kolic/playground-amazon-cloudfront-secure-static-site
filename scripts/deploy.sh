@@ -24,17 +24,28 @@ ENVIRONMENT=${2:-dev}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
 
 
+get_aws_account_id() {
+    print_info "Checking AWS credentials..."
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
+    if [ -z "$ACCOUNT_ID" ]; then
+        print_error "AWS credentials not configured. Please run 'aws configure' first."
+        exit 1
+    fi
+    print_debug "AWS Account ID: $ACCOUNT_ID"
+}
+
+
 get_config() {
     print_info "Loading configuration for environment: $ENVIRONMENT from $CONFIG_FILE"
 
+    # Global config
     NAME=$(jq -r ".name" "$CONFIG_FILE")
     REGION=$(jq -r ".region" "$CONFIG_FILE")
-    GITHUB_ORG=$(jq -r ".github.org" "$CONFIG_FILE")
-    GITHUB_REPO=$(jq -r ".github.repo" "$CONFIG_FILE")
 
-    PACKAGE_BUCKET="${NAME}-cf-templates-${REGION}"
-    STACK_NAME="${NAME}-${ENVIRONMENT}"
-    OIDC_STACK_NAME="${NAME}-github-oidc"
+    # OIDC config
+    OIDC_ARN=$(jq -r ".oidc.oidc_arn" "$CONFIG_FILE")
+    GITHUB_ORG=$(jq -r ".oidc.github_org" "$CONFIG_FILE")
+    GITHUB_REPO=$(jq -r ".oidc.github_repo" "$CONFIG_FILE")
 
     # Environment-specific config
     if ! jq -e ".environments.${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
@@ -47,6 +58,11 @@ get_config() {
         value=$(jq -r ".environments.${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
         PARAMETERS="${PARAMETERS} ${param}=${value}"
     done
+
+    # Derived values
+    PACKAGE_BUCKET="${NAME}-cf-templates-${ACCOUNT_ID}-${REGION}"
+    STACK_NAME="${NAME}-${ENVIRONMENT}"
+    OIDC_STACK_NAME="${NAME}-github-oidc"
 
     # print variables
     print_debug "Environment: $ENVIRONMENT"
@@ -88,17 +104,12 @@ deploy_oidc() {
     print_info "⚠️  OIDC setup is a one-time, account-level operation."
     print_info "Deploying GitHub OIDC Provider and Role..."
     
-    # Check if OIDC provider already exists
-    print_debug "Checking for existing OIDC providers..."
-    EXISTING_OIDC_ARN=""
-    if aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[?ends_with(Arn, `token.actions.githubusercontent.com`)].Arn' --output text | grep -q "arn:aws:iam"; then
-        EXISTING_OIDC_ARN=$(aws iam list-open-id-connect-providers --query 'OpenIDConnectProviderList[?ends_with(Arn, `token.actions.githubusercontent.com`)].Arn' --output text)
-        print_debug "Found existing OIDC provider: $EXISTING_OIDC_ARN"
+    if [ -z "$OIDC_ARN" ]; then
+        print_debug "No existing OIDC provider ARN provided. A new OIDC provider will be created."
     else
-        print_debug "No existing OIDC provider found. Will create a new one."
+        print_debug "Using provided existing OIDC provider ARN: $OIDC_ARN"
     fi
-    
-    # Deploy OIDC stack
+
     print_debug "Deploying OIDC CloudFormation stack..."
     if ! aws cloudformation deploy \
         --region $REGION \
@@ -109,7 +120,7 @@ deploy_oidc() {
             ProjectName=$NAME \
             GitHubOrg=$GITHUB_ORG \
             GitHubRepo=$GITHUB_REPO \
-            OIDCProviderArn="$EXISTING_OIDC_ARN" \
+            OIDCProviderArn="$OIDC_ARN" \
         --tags Solution=$NAME Environment=$ENVIRONMENT Component=OIDC
     then
         print_error "Failed to deploy OIDC infrastructure"
@@ -263,50 +274,33 @@ validate_template() {
 
 
 main() {
-    # Check AWS credentials
-    print_info "Checking AWS credentials..."
-    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
-    if [ -z "$ACCOUNT_ID" ]; then
-        print_error "AWS credentials not configured. Please run 'aws configure' first."
-        exit 1
-    fi
-    print_debug "AWS Account ID: $ACCOUNT_ID"
+    check_dependencies
+    get_aws_account_id
+    get_config
 
     # Execute action
     case $ACTION in
         "test")
             print_info "Running test action..."
-            check_dependencies
-            get_config
             print_success "Test action completed successfully."
             ;;
         "validate")
-            check_dependencies
-            get_config
             validate_template
             ;;
         "oidc")
-            check_dependencies
-            get_config
             deploy_oidc
             ;;
         "infra")
-            check_dependencies
-            get_config
             package_static
             package_artifacts
             deploy_infrastructure
             ;;
         "content")
-            check_dependencies
-            get_config
             sync_site_content
             invalidate_cloudfront_cache
             print_success "Content deployment completed!"
             ;;
         "outputs")
-            check_dependencies
-            get_config
             get_stack_outputs
             ;;
         *)
