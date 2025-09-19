@@ -31,7 +31,7 @@ This solution creates an S3 bucket that hosts your static website’s assets. Th
 
 ### CloudFront configuration
 
-This solution creates a CloudFront distribution to serve your website to viewers. The distribution is configured with a CloudFront [origin access identity](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html) to make sure that the website is only accessible via CloudFront, not directly from S3. The distribution is also configured with a [CloudFront Response Header Policy](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/adding-response-headers.html) that adds security headers to every response.
+This solution creates a CloudFront distribution to serve your website to viewers. The distribution is configured with a CloudFront [origin access control](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html) to make sure that the website is only accessible via CloudFront, not directly from S3. The distribution is also configured with a [CloudFront Response Header Policy](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/adding-response-headers.html) that adds security headers to every response.
 
 ### ACM configuration
 
@@ -85,16 +85,16 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
     {
        "name": "your-project-name",
        "region": "us-east-1",
-       "github": {
-          "org": "your-github-username",
-          "repo": "your-repo-name"
+       "oidc": {
+          "oidc_arn": "",
+          "github_org": "your-github-username",
+          "github_repo": "your-repo-name"
        },
        "environments": {
           "dev": {
              "parameters": {
                 "DomainName": "example.com",
                 "SubDomain": "dev",
-                "Environment": "dev",
                 "HostedZoneId": "Z1234567890ABC",
                 "CreateApex": "no"
              }
@@ -103,7 +103,6 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
              "parameters": {
                 "DomainName": "example.com",
                 "SubDomain": "staging",
-                "Environment": "staging",
                 "HostedZoneId": "Z1234567890ABC",
                 "CreateApex": "no"
              }
@@ -112,7 +111,6 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
              "parameters": {
                 "DomainName": "example.com",
                 "SubDomain": "prod",
-                "Environment": "prod",
                 "HostedZoneId": "Z1234567890ABC",
                 "CreateApex": "yes"
              }

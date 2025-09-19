@@ -24,6 +24,11 @@ All environments are defined in `deploy-config.json`:
 ```json
 {
   "name": "project-name",
+  "oidc": {
+    "oidc_arn": "",
+    "github_org": "github-username",
+    "github_repo": "repo-name"
+  },
   "environments": {
     "dev": { "parameters": { "SubDomain": "dev", "CreateApex": "no" } },
     "prod": { "parameters": { "SubDomain": "www", "CreateApex": "yes" } }
@@ -41,20 +46,29 @@ All environments are defined in `deploy-config.json`:
 
 ## Deployment Workflows
 
-### Script-Based Deployment (`scripts/deploy.sh`)
+### Script-Based Deployment
+
+#### Main deployment script (`scripts/deploy.sh`)
 ```bash
 ./scripts/deploy.sh <action> [environment]
 ```
 
 **Actions**:
-- `oidc` - One-time GitHub OIDC setup (account-level, creates IAM role)
 - `infra` - Deploy CloudFormation infrastructure
 - `content` - Sync `www/` to S3 and invalidate CloudFront cache  
 - `outputs` - Display stack outputs (bucket names, distribution ID, URLs)
+- `validate` - Validate CloudFormation templates
+- `help` - Display usage information
+
+#### OIDC setup script (`scripts/oidc.sh`)
+```bash
+./scripts/oidc.sh
+```
+One-time GitHub OIDC setup (account-level, creates IAM role for GitHub Actions)
 
 **Key Implementation Details**:
 - Uses `jq` to parse `deploy-config.json`
-- Creates template package bucket: `{name}-cf-templates-{region}`
+- Creates template package bucket: `{name}-cf-templates-{account-id}-{region}`
 - Stack naming: `{name}-{environment}` (e.g., `mysite-dev`)
 - OIDC stack naming: `{name}-github-oidc`
 
@@ -90,13 +104,17 @@ templates/
 - `www/` - Static website files (HTML, CSS, assets)
 - `source/witch/` - Lambda function for initial content deployment
 - `scripts/` - Deployment and helper scripts
+  - `deploy.sh` - Main deployment script
+  - `oidc.sh` - OIDC setup script
+  - `helpers.sh` - Shared utility functions (logging, dependency checks)
+- `.github/actions/log-env/` - Custom GitHub Action for environment logging
 
 ## Development Workflows
 
 ### Local Development Commands
 ```bash
-# Test configuration and dependencies
-./scripts/deploy.sh test dev
+# Validate CloudFormation templates
+./scripts/deploy.sh validate dev
 
 # Deploy infrastructure changes
 ./scripts/deploy.sh infra dev
@@ -106,6 +124,9 @@ templates/
 
 # View stack information
 ./scripts/deploy.sh outputs dev
+
+# Get help information
+./scripts/deploy.sh help
 ```
 
 ### Making Changes
