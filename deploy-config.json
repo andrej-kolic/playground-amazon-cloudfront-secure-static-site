@@ -1,33 +1,35 @@
 {
-  "_shared": {
-    "name": "aw1",
-    "region": "us-east-1"
+  "name": "aw1",
+  "region": "us-east-1",
+  "oidc": {
+    "oidc_arn": "",
+    "github_org": "andrej-kolic",
+    "github_repo": "playground-amazon-cloudfront-secure-static-site"
   },
-  "dev": {
-    "parameters": {
-      "DomainName": "andrejkolic.com",
-      "SubDomain": "aw1-dev",
-      "Environment": "dev",
-      "HostedZoneId": "Z00295123IDZ7CVMX671W",
-      "CreateApex": "no"
-    }
-  },
-  "staging": {
-    "parameters": {
-      "DomainName": "andrejkolic.com",
-      "SubDomain": "aw1-staging",
-      "Environment": "staging",
-      "HostedZoneId": "Z00295123IDZ7CVMX671W",
-      "CreateApex": "no"
-    }
-  },
-  "prod": {
-    "parameters": {
-      "DomainName": "andrejkolic.com",
-      "SubDomain": "aw1",
-      "Environment": "prod",
-      "HostedZoneId": "Z00295123IDZ7CVMX671W",
-      "CreateApex": "yes"
+  "environments": {
+    "dev": {
+      "parameters": {
+        "DomainName": "andrejkolic.com",
+        "SubDomain": "aw1-dev",
+        "HostedZoneId": "Z00295123IDZ7CVMX671W",
+        "CreateApex": "no"
+      }
+    },
+    "staging": {
+      "parameters": {
+        "DomainName": "andrejkolic.com",
+        "SubDomain": "aw1-staging",
+        "HostedZoneId": "Z00295123IDZ7CVMX671W",
+        "CreateApex": "no"
+      }
+    },
+    "prod": {
+      "parameters": {
+        "DomainName": "andrejkolic.com",
+        "SubDomain": "aw1",
+        "HostedZoneId": "Z00295123IDZ7CVMX671W",
+        "CreateApex": "yes"
+      }
     }
   }
 }

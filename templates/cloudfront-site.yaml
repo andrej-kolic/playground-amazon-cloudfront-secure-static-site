@@ -29,6 +29,10 @@ Parameters:
     Type: String
   CreateApex:
     Type: String
+  ProjectName:
+    Type: String
+    Description: Name of the project/application
+    AllowedPattern: ^[a-z0-9\-]{3,20}$
   Environment:
     Type: String
     Description: 'Environment name'
@@ -72,7 +76,7 @@ Resources:
           ForwardedValues:
             QueryString: true
           MaxTTL: 31536000
-          TargetOriginId: !Sub 'S3-${AWS::StackName}-root'
+          TargetOriginId: !Sub '${ProjectName}-${Environment}-s3-origin'
           ViewerProtocolPolicy: 'redirect-to-https'
           ResponseHeadersPolicyId: !Ref ResponseHeadersPolicy
         CustomErrorResponses:
@@ -94,7 +98,7 @@ Resources:
           Prefix: 'cdn/'
         Origins:
           - DomainName: !Ref 'S3BucketRootName'
-            Id: !Sub 'S3-${AWS::StackName}-root'
+            Id: !Sub '${ProjectName}-${Environment}-s3-origin'
             OriginAccessControlId: !Ref OriginAccessControl
             S3OriginConfig: {}
         PriceClass: 'PriceClass_All'
@@ -104,7 +108,7 @@ Resources:
           SslSupportMethod: 'sni-only'
       Tags:
         - Key: Solution
-          Value: ACFS3
+          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
@@ -112,11 +116,7 @@ Resources:
     Type: AWS::CloudFront::OriginAccessControl
     Properties:
       OriginAccessControlConfig:
-        # Get a unique ID for the OAC Config name.
-        # Name must be unique within account
-        Name: !Sub
-          - amzn-secure-static-site-${guid}
-          - guid: !Select [2, !Split ['/', !Ref 'AWS::StackId']]
+        Name: !Sub '${ProjectName}-${Environment}-oac'
         OriginAccessControlOriginType: s3
         SigningBehavior: always
         SigningProtocol: sigv4
@@ -152,7 +152,7 @@ Resources:
     Type: AWS::CloudFront::ResponseHeadersPolicy
     Properties:
       ResponseHeadersPolicyConfig:
-        Name: !Sub '${AWS::StackName}-static-site-security-headers'
+        Name: !Sub '${ProjectName}-${Environment}-static-site-security-headers'
         SecurityHeadersConfig:
           StrictTransportSecurity:
             AccessControlMaxAgeSec: 63072000

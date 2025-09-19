@@ -1,0 +1,36 @@
+name: Validate Templates
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'templates/**'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'templates/**'
+  workflow_dispatch:
+
+env:
+  AWS_DEFAULT_REGION: us-east-1
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-validate
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+      
+      - name: Validate CloudFormation templates
+        run: ./scripts/deploy.sh validate

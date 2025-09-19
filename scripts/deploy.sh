@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Deploy script for AWS CloudFormation Static Site
+# Usage: ./deploy.sh <action> [environment]
+
 SCRIPTS_DIR=$(dirname "$0")
 ROOT_DIR=$(dirname "$0")/..
 
@@ -9,42 +12,59 @@ source "$SCRIPTS_DIR/helpers.sh"
 export AWS_PAGER=""
 
 # Default values
-ENVIRONMENT=${1:-dev}
-ACTION=${2:-content}
+ACTION=${1:-content}
+ENVIRONMENT=${2:-dev}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
+
+
+get_aws_account_id() {
+    print_info "Checking AWS credentials..."
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
+    if [ -z "$ACCOUNT_ID" ]; then
+        print_error "AWS credentials not configured. Please run 'aws configure' first."
+        exit 1
+    fi
+    print_debug "AWS Account ID: $ACCOUNT_ID"
+}
 
 
 get_config() {
     print_info "Loading configuration for environment: $ENVIRONMENT from $CONFIG_FILE"
 
-    # Shared config
-    if ! jq -e "._shared" "$CONFIG_FILE" > /dev/null 2>&1; then
-        print_error "Shared configuration not found in ${CONFIG_FILE}"
-        exit 1
-    fi
+    # Global config
+    NAME=$(jq -r ".name" "$CONFIG_FILE")
+    REGION=$(jq -r ".region" "$CONFIG_FILE")
 
-    NAME=$(jq -r "._shared.name" "$CONFIG_FILE")
-    REGION=$(jq -r "._shared.region" "$CONFIG_FILE")
-    PACKAGE_BUCKET="${NAME}-cf-templates-${REGION}"
-    STACK_NAME="${NAME}-${ENVIRONMENT}"
+    # OIDC config
+    OIDC_ARN=$(jq -r ".oidc.oidc_arn" "$CONFIG_FILE")
+    GITHUB_ORG=$(jq -r ".oidc.github_org" "$CONFIG_FILE")
+    GITHUB_REPO=$(jq -r ".oidc.github_repo" "$CONFIG_FILE")
 
     # Environment-specific config
-    if ! jq -e ".${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
-        print_error "Configuration for environment '${ENVIRONMENT}' not found in ${CONFIG_FILE}"
+    if ! jq -e ".environments.${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
+        print_error "Configuration for environment '${ENVIRONMENT}' not found in .environments of ${CONFIG_FILE}"
         exit 1
     fi
 
-    PARAMETERS=""
-    for param in $(jq -r ".${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
-        value=$(jq -r ".${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
+    PARAMETERS="ProjectName=${NAME} Environment=${ENVIRONMENT}"
+    for param in $(jq -r ".environments.${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
+        value=$(jq -r ".environments.${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
         PARAMETERS="${PARAMETERS} ${param}=${value}"
     done
+
+    # Derived values
+    PACKAGE_BUCKET="${NAME}-cf-templates-${ACCOUNT_ID}-${REGION}"
+    STACK_NAME="${NAME}-${ENVIRONMENT}"
+    OIDC_STACK_NAME="${NAME}-github-oidc"
 
     # print variables
     print_debug "Environment: $ENVIRONMENT"
     print_debug "Name: $NAME"
     print_debug "Package Bucket: $PACKAGE_BUCKET"
     print_debug "Stack Name: $STACK_NAME"
+    print_debug "OIDC Stack Name: $OIDC_STACK_NAME"
+    print_debug "GitHub Org: $GITHUB_ORG"
+    print_debug "GitHub Repo: $GITHUB_REPO"
     print_debug "Region: $REGION"
     print_debug "Parameters: $PARAMETERS"
 }
@@ -81,11 +101,12 @@ deploy_infrastructure() {
         --template-file ${ROOT_DIR}/packaged.template \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
         --parameter-overrides $PARAMETERS \
-        --tags Solution=ACFS3 Environment=$ENVIRONMENT
+        --tags Solution=$NAME Environment=$ENVIRONMENT
     then
         print_error "Failed to deploy infrastructure"
         exit 1
     fi
+    print_success "Infrastructure deployment completed!"
 }
 
 
@@ -187,38 +208,68 @@ invalidate_cloudfront_cache() {
 }
 
 
+validate_template() {
+    print_info "Validating CloudFormation template..."
+
+    for template in ${ROOT_DIR}/templates/*.yaml; do
+        if [ -f "$template" ]; then
+            print_debug "Validating $template"
+            aws cloudformation validate-template \
+                --template-body file://$template \
+                --region "$REGION"
+        fi
+    done
+
+    print_success "Template validation successful!"
+}
+
+
+print_help() {
+    print_info "Usage: $0 <action> [environment]"
+    print_info ""
+    print_info "Available actions:"
+    print_info "  help     - Show this help message"
+    print_info "  validate - Validate template"
+    print_info "  infra    - Deploy infrastructure"
+    print_info "  content  - Deploy website content"
+    print_info "  outputs  - Display stack outputs"
+    print_info ""
+    print_info "See deploy-config.json for available environments"
+}
+
+
 main() {
+    check_dependencies
+    get_aws_account_id
+    get_config
+
+    # Execute action
     case $ACTION in
-        "test")
-            check_dependencies
-            get_config
-            print_success "Test action completed successfully."
+        "help")
+            print_help
+            ;;
+        "validate")
+            validate_template
             ;;
         "infra")
-            check_dependencies
-            get_config
             package_static
             package_artifacts
             deploy_infrastructure
-            print_success "Infrastructure deployment completed!"
             ;;
         "content")
-            check_dependencies
-            get_config
             sync_site_content
             invalidate_cloudfront_cache
             print_success "Content deployment completed!"
             ;;
         "outputs")
-            check_dependencies
-            get_config
             get_stack_outputs
             ;;
         *)
             print_error "Unknown action: $ACTION"
+            print_help
             exit 1
             ;;
-    esac    
+    esac
 }
 
 main
