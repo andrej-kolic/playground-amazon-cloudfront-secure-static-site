@@ -114,7 +114,7 @@ templates/
 ### Local Development Commands
 ```bash
 # Validate CloudFormation templates
-./scripts/deploy.sh validate dev
+./scripts/deploy.sh validate
 
 # Deploy infrastructure changes
 ./scripts/deploy.sh infra dev

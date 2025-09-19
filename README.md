@@ -205,7 +205,7 @@ This method uses the included deployment scripts to deploy the solution directly
 **Available script commands:**
 
 - `./scripts/deploy.sh help` - Display usage information
-- `./scripts/deploy.sh validate [env]` - Validate CloudFormation templates
+- `./scripts/deploy.sh validate` - Validate CloudFormation templates
 - `./scripts/deploy.sh infra [env]` - Deploy infrastructure (CloudFormation stacks)
 - `./scripts/deploy.sh content [env]` - Deploy website content and invalidate cache
 - `./scripts/deploy.sh outputs [env]` - Display stack outputs (URLs, bucket names, etc.)
@@ -225,7 +225,7 @@ The `content` action will:
 **Example deployment workflow:**
 ```bash
 # Validate templates first
-./scripts/deploy.sh validate dev
+./scripts/deploy.sh validate
 
 # Deploy infrastructure
 ./scripts/deploy.sh infra dev
