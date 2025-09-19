@@ -65,8 +65,8 @@ You can use `scripts/misc/create-hosted-zone.sh` to create Hosted Zone.
 To deploy the solution, you can use several methods:
 
 1. **GitHub Actions with OIDC (Recommended)** - Secure automated deployment
-2. **AWS CloudFormation Console** - Manual deployment through AWS Console  
-3. **AWS CLI** - Command line deployment
+2. **AWS CLI** - Command line deployment
+3. **AWS CloudFormation Console** - Manual deployment through AWS Console  
 
 > **Note:** You must have IAM permissions to launch CloudFormation templates that create IAM roles, and to create all the AWS resources in the solution. Also, you are responsible for the cost of the AWS services used while running this solution. For more information about costs, see the pricing pages for each AWS service.
 
@@ -138,49 +138,7 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
 
 For detailed OIDC setup instructions, see [docs/OIDC_SETUP.md](docs/OIDC_SETUP.md).
 
-### Method 2: Use the CloudFormation console
-
-**To deploy the solution using the CloudFormation console**
-
-1. Click the **Launch on AWS** button to open the solution in the CloudFormation console.
-
-   [![Launch the Amazon CloudFront secure static website with CloudFormation](./docs/images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=amazon-cloudfront-secure-static-site-templates-main&templateURL=https://s3.amazonaws.com/solution-builders-us-east-1/amazon-cloudfront-secure-static-site/latest/main.yaml)
-
-2. If necessary, sign in with your AWS account credentials.
-3. You should see a **Create stack** page, with pre-populated fields that specify the CloudFormation template. Choose the **Next** button at the bottom of the page.
-4. On the **Specify stack details** page, enter values for the
-   following fields:
-
-   - **SubDomain:** The subdomain for your registered domain name. Viewers use the subdomain to access your website, for example: www.example.com. We recommend using the default value of **www** as the subdomain.
-   - **DomainName:** Your registered domain name, such as example.com. This domain must be pointed to a Route 53 hosted zone.
-   - **HostedZoneId** The Route 53 Hosted Zone Id containing the domain being used.
-   - **CreateApex:** Optionally create an Alias to the domain apex (example.com) in your CloudFront configuration. Default is [no]
-
-   After entering values, choose the **Next** button.
-
-5. On the **Configure stack options** page, you can optionally [add tags and other stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html). When finished, choose the **Next** button.
-6. On the **Review** page, you must scroll down and check the two boxes in the **Capabilities** section:
-
-   - **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**
-   - **I acknowledge that AWS CloudFormation might require the following capability: CAPABILITY_AUTO_EXPAND**
-
-   These capabilities allow CloudFormation to create an IAM role that allows access
-   to the stack’s resources, and to name the resources dynamically.
-
-7. Choose the **Create stack** button.
-8. Wait for the CloudFormation stack to launch. The stack launches some nested stacks, and can take several minutes to finish. When it’s launched, the **Status** changes to **CREATE_COMPLETE**.
-9. After the stack is launched, go to **www.example.com** to view your website (replace **example.com** with your domain name). You should see the website’s default content:
-
-   ![Static website page](./docs/images/static-website.png)
-
-**To replace the website’s default content with your own**
-
-1. Go to the [Amazon S3 console](https://s3.console.aws.amazon.com/s3/home).
-1. Choose the bucket whose name begins with **amazon-cloudfront-secure-static-site-s3bucketroot-**.
-   > **Note:** Make sure to choose the bucket with **s3bucketroot** in its name, not **s3bucketlogs**. The bucket with **s3bucketroot** in its name contains the content. The one with **s3bucketlogs** contains only log files.
-1. In the bucket, delete the default content, then upload your own.
-
-### Method 3: Deploy using local shell scripts
+### Method 2: Deploy using local shell scripts
 
 This method uses the included deployment scripts to deploy the solution directly from your local machine.
 
@@ -280,56 +238,56 @@ The `content` action will:
 ./scripts/deploy.sh content dev
 ```
 
+### Method 3: Use the CloudFormation console
+
+**To deploy the solution using the CloudFormation console**
+
+1. Click the **Launch on AWS** button to open the solution in the CloudFormation console.
+
+   [![Launch the Amazon CloudFront secure static website with CloudFormation](./docs/images/deploy-to-aws.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=amazon-cloudfront-secure-static-site-templates-main&templateURL=https://s3.amazonaws.com/solution-builders-us-east-1/amazon-cloudfront-secure-static-site/latest/main.yaml)
+
+2. If necessary, sign in with your AWS account credentials.
+3. You should see a **Create stack** page, with pre-populated fields that specify the CloudFormation template. Choose the **Next** button at the bottom of the page.
+4. On the **Specify stack details** page, enter values for the
+   following fields:
+
+   - **SubDomain:** The subdomain for your registered domain name. Viewers use the subdomain to access your website, for example: www.example.com. We recommend using the default value of **www** as the subdomain.
+   - **DomainName:** Your registered domain name, such as example.com. This domain must be pointed to a Route 53 hosted zone.
+   - **HostedZoneId** The Route 53 Hosted Zone Id containing the domain being used.
+   - **CreateApex:** Optionally create an Alias to the domain apex (example.com) in your CloudFront configuration. Default is [no]
+
+   After entering values, choose the **Next** button.
+
+5. On the **Configure stack options** page, you can optionally [add tags and other stack options](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-add-tags.html). When finished, choose the **Next** button.
+6. On the **Review** page, you must scroll down and check the two boxes in the **Capabilities** section:
+
+   - **I acknowledge that AWS CloudFormation might create IAM resources with custom names.**
+   - **I acknowledge that AWS CloudFormation might require the following capability: CAPABILITY_AUTO_EXPAND**
+
+   These capabilities allow CloudFormation to create an IAM role that allows access
+   to the stack’s resources, and to name the resources dynamically.
+
+7. Choose the **Create stack** button.
+8. Wait for the CloudFormation stack to launch. The stack launches some nested stacks, and can take several minutes to finish. When it’s launched, the **Status** changes to **CREATE_COMPLETE**.
+9. After the stack is launched, go to **www.example.com** to view your website (replace **example.com** with your domain name). You should see the website’s default content:
+
+   ![Static website page](./docs/images/static-website.png)
+
+**To replace the website’s default content with your own**
+
+1. Go to the [Amazon S3 console](https://s3.console.aws.amazon.com/s3/home).
+1. Choose the bucket whose name begins with **amazon-cloudfront-secure-static-site-s3bucketroot-**.
+   > **Note:** Make sure to choose the bucket with **s3bucketroot** in its name, not **s3bucketlogs**. The bucket with **s3bucketroot** in its name contains the content. The one with **s3bucketlogs** contains only log files.
+1. In the bucket, delete the default content, then upload your own.
+
 ## Customizing the Solution
 
-### Update the website content locally
-
-**To customize the website with your own content using the deployment scripts**
-
-1. Ensure you have the prerequisites installed:
-   - AWS CLI configured with appropriate permissions
-   - `jq` utility for JSON parsing
-   - `make` utility
-
-2. Clone or download this project from https://github.com/awslabs/aws-cloudformation-templates.
-
-3. Configure your deployment settings in `deploy-config.json` with your domain information.
-
-4. Copy your website content into the **www** folder.
-
-5. Deploy the infrastructure using the deployment script:
-   ```bash
-   ./scripts/deploy.sh infra dev
-   ```
-
-6. Deploy your content:
-   ```bash
-   ./scripts/deploy.sh content dev
-   ```
-
-The deployment script automatically handles:
-- Building the static site package with `make package-static`
-- Creating the S3 bucket for CloudFormation artifacts
-- Packaging and deploying CloudFormation templates
-- Syncing your website content to S3
-- Invalidating the CloudFront cache
-
 ### Updating the site Response Headers
 
 To change the Response Header Policy of the site:
 
 1. Make your changes by editing ResponseHeadersPolicy in `templates/cloudfront-site.yaml`. Here you can modify any of the headers for Strict-Transport-Security, Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, and Referrer-Policy. 
-2. Deploy the infrastructure changes:
-   ```bash
-   ./scripts/deploy.sh infra [environment]
-   ```
-
-### Updating the site Response Headers
-
-To change the Response Header Policy of the site:
-
-1. Make your changes by editing ResponseHeadersPolicy in `templates/cloudfront-site.yaml`. Here you can modify any of the headers for Strict-Transport-Security, Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, and Referrer-Policy. 
-2. Deploy the solution by following the steps in [Update the website content locally](#update-the-website-content-locally)
+2. Deploy the solution using one of described methods
 
 ## Contributing
 
