@@ -1,0 +1,236 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'GitHub OIDC Provider and IAM Role for GitHub Actions deployment'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Name of the project/application
+    AllowedPattern: ^[a-z0-9\-]{3,20}$
+  GitHubOrg:
+    Type: String
+    Description: 'GitHub organization or username'
+  GitHubRepo:
+    Type: String
+    Description: 'GitHub repository name'
+  OIDCProviderArn:
+    Type: String
+    Description: 'ARN of the GitHub OIDC Provider (if it already exists)'
+    Default: ''
+
+Conditions:
+  CreateOIDCProvider: !Equals [!Ref OIDCProviderArn, '']
+
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - CreateOIDCProvider
+                - !Ref GitHubOIDCProvider
+                - !Ref OIDCProviderArn
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                'token.actions.githubusercontent.com:aud': sts.amazonaws.com
+              StringLike:
+                'token.actions.githubusercontent.com:sub': !Sub 'repo:${GitHubOrg}/${GitHubRepo}:*'
+      ManagedPolicyArns:
+        - !Ref GitHubActionsPolicy
+      Tags:
+        - Key: Solution
+          Value: !Ref ProjectName
+
+  GitHubActionsPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          # CloudFormation actions require stack-specific ARNs for least privilege
+          - Effect: Allow
+            Action:
+              - cloudformation:CreateStack
+              - cloudformation:UpdateStack
+              - cloudformation:DeleteStack
+              - cloudformation:DescribeStacks
+              - cloudformation:CreateChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:GetTemplate
+              - cloudformation:ValidateTemplate
+              - cloudformation:Package
+              - cloudformation:Deploy
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - s3:CreateBucket
+              - s3:DeleteBucket
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetBucketLocation
+              - s3:GetBucketVersioning
+              - s3:PutBucketVersioning
+              - s3:GetBucketEncryption
+              - s3:PutBucketEncryption
+              - s3:GetBucketPolicy
+              - s3:PutBucketPolicy
+              - s3:DeleteBucketPolicy
+              - s3:GetBucketLogging
+              - s3:PutBucketLogging
+              - s3:GetBucketWebsite
+              - s3:PutBucketWebsite
+              - s3:DeleteBucketWebsite
+              - s3:PutBucketOwnershipControls
+              - s3:PutBucketTagging
+              - s3:GetBucketTagging
+              - s3:PutEncryptionConfiguration
+              - s3:GetBucketAcl
+              - s3:PutBucketAcl
+            Resource:
+              - !Sub 'arn:aws:s3:::*-*'
+              - !Sub 'arn:aws:s3:::*-*/*'
+          - Effect: Allow
+            Action:
+              - route53:GetHostedZone
+              - route53:ListHostedZones
+              - route53:ChangeResourceRecordSets
+              - route53:ListResourceRecordSets
+              - route53:GetChange
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - acm:RequestCertificate
+              - acm:DescribeCertificate
+              - acm:DeleteCertificate
+              - acm:ListCertificates
+              - acm:AddTagsToCertificate
+              - acm:RemoveTagsFromCertificate
+              - acm:GetCertificate
+              - acm:ListTagsForCertificate
+            Resource: !Sub 'arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/*'
+          - Effect: Allow
+            Action:
+              - cloudfront:CreateDistribution
+              - cloudfront:UpdateDistribution
+              - cloudfront:DeleteDistribution
+              - cloudfront:GetDistribution
+              - cloudfront:ListDistributions
+              - cloudfront:CreateInvalidation
+              - cloudfront:GetInvalidation
+              - cloudfront:ListInvalidations
+              - cloudfront:TagResource
+              - cloudfront:UntagResource
+            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/*'
+          - Effect: Allow
+            Action:
+              - cloudfront:CreateOriginAccessControl
+              - cloudfront:UpdateOriginAccessControl
+              - cloudfront:DeleteOriginAccessControl
+              - cloudfront:GetOriginAccessControl
+              - cloudfront:ListOriginAccessControls
+            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:origin-access-control/*'
+          - Effect: Allow
+            Action:
+              - cloudfront:CreateResponseHeadersPolicy
+              - cloudfront:UpdateResponseHeadersPolicy
+              - cloudfront:DeleteResponseHeadersPolicy
+              - cloudfront:GetResponseHeadersPolicy
+              - cloudfront:ListResponseHeadersPolicies
+            Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:response-headers-policy/*'
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
+          - Effect: Allow
+            Action:
+              - iam:CreateRole
+              - iam:DeleteRole
+              - iam:GetRole
+              - iam:UpdateRole
+              - iam:CreatePolicy
+              - iam:DeletePolicy
+              - iam:GetPolicy
+              - iam:AttachRolePolicy
+              - iam:DetachRolePolicy
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:GetRolePolicy
+              - iam:CreateInstanceProfile
+              - iam:DeleteInstanceProfile
+              - iam:AddRoleToInstanceProfile
+              - iam:RemoveRoleFromInstanceProfile
+              - iam:TagRole
+              - iam:UntagRole
+              - iam:ListRoleTags
+              - iam:TagPolicy
+              - iam:UntagPolicy
+              - iam:ListPolicyTags
+            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
+          - Effect: Allow
+            Action:
+              - lambda:CreateFunction
+              - lambda:UpdateFunctionCode
+              - lambda:UpdateFunctionConfiguration
+              - lambda:GetFunction
+              - lambda:DeleteFunction
+              - lambda:InvokeFunction
+              - lambda:ListFunctions
+              - lambda:PublishLayerVersion
+              - lambda:TagResource
+              - lambda:UntagResource
+              - lambda:PutFunctionConcurrency
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*'
+          - Effect: Allow
+            Action:
+              - lambda:PublishLayerVersion
+              - lambda:TagResource
+              - lambda:UntagResource
+              - lambda:GetLayerVersion
+            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:*'
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - logs:DescribeLogGroups
+              - logs:DescribeLogStreams
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*'
+          - Effect: Allow
+            Action:
+              - sts:GetCallerIdentity
+            Resource: '*'
+
+Outputs:
+  GitHubActionsRoleArn:
+    Description: 'ARN of the GitHub Actions IAM Role'
+    Value: !GetAtt GitHubActionsRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-GitHubActionsRoleArn'
+  
+  OIDCProviderArn:
+    Description: 'ARN of the GitHub OIDC Provider'
+    Value: !If
+      - CreateOIDCProvider
+      - !Ref GitHubOIDCProvider
+      - !Ref OIDCProviderArn
+    Export:
+      Name: !Sub '${AWS::StackName}-OIDCProviderArn'

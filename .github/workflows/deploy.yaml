@@ -49,7 +49,8 @@ jobs:
   deploy-dev:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      id-token: write
+      contents: read
       issues: write
       pull-requests: write
     if: |
@@ -68,17 +69,17 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-dev
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Deploy to development
         run: |
           action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh dev $action
+          ./scripts/deploy.sh $action dev
 
       - name: Comment PR with deployment info
         if: github.event_name == 'pull_request'
@@ -87,7 +88,7 @@ jobs:
           script: |
             const { execSync } = require('child_process');
             try {
-              const output = execSync('./scripts/deploy.sh dev outputs', { encoding: 'utf8' });
+              const output = execSync('./scripts/deploy.sh outputs dev', { encoding: 'utf8' });
               console.log('outputs:\n', output);
 
               const websiteUrl = output.match(/Website URL: (https?:\/\/[^\s]+)/);
@@ -108,6 +109,9 @@ jobs:
   # Deploy to staging environment
   deploy-staging:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     if: |
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
       (
@@ -123,22 +127,23 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-staging
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Deploy to staging
         run: |
           action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh staging $action
+          ./scripts/deploy.sh $action staging
 
   # Deploy to production environment
   deploy-prod:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: write
     # needs: [validate, deploy-staging]
     if: |
@@ -153,26 +158,17 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-session-name: github-actions-production
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
       - name: Deploy to production
         run: |
           action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh prod $action
-
-      - name: Create Git Tag
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-          git tag prod-${{ github.run_number }}
-          git push origin prod-${{ github.run_number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ./scripts/deploy.sh $action prod
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
