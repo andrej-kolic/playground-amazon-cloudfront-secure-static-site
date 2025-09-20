@@ -52,17 +52,20 @@ deploy_oidc() {
     fi
 
     print_debug "Deploying OIDC CloudFormation stack..."
-    if ! aws cloudformation deploy \
-        --region $REGION \
-        --stack-name $OIDC_STACK_NAME \
-        --template-file ${ROOT_DIR}/templates/github-oidc.yaml \
-        --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides \
+    local PARAMETERS=" \
         ProjectName=$NAME \
         GitHubOrg=$GITHUB_ORG \
         GitHubRepo=$GITHUB_REPO \
-        OIDCProviderArn="$OIDC_ARN" \
-        --tags Solution=$NAME Component=OIDC; then
+        OIDCProviderArn=$OIDC_ARN \
+    "
+
+    if ! aws cloudformation deploy \
+        --region "$REGION" \
+        --stack-name "$OIDC_STACK_NAME" \
+        --template-file "${ROOT_DIR}"/templates/github-oidc.yaml \
+        --capabilities CAPABILITY_NAMED_IAM \
+        --parameter-overrides "$PARAMETERS" \
+        --tags Solution="$NAME" Component=OIDC; then 
         print_error "Failed to deploy OIDC infrastructure"
         exit 1
     fi
@@ -71,7 +74,7 @@ deploy_oidc() {
     GITHUB_ROLE_ARN=$(aws cloudformation describe-stacks \
         --stack-name "$OIDC_STACK_NAME" \
         --region "$REGION" \
-        --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
+        --query "Stacks[0].Outputs[?OutputKey==$(GitHubActionsRoleArn)].OutputValue" \
         --output text 2> /dev/null)
 
     print_success "OIDC deployment completed!"
