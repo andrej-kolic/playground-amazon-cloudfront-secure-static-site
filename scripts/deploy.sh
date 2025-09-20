@@ -16,10 +16,9 @@ ACTION=${1:-content}
 ENVIRONMENT=${2:-dev}
 CONFIG_FILE="${ROOT_DIR}/deploy-config.json"
 
-
 get_aws_account_id() {
     print_info "Checking AWS credentials..."
-    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
+    ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2> /dev/null)
     if [ -z "$ACCOUNT_ID" ]; then
         print_error "AWS credentials not configured. Please run 'aws configure' first."
         exit 1
@@ -27,18 +26,12 @@ get_aws_account_id() {
     print_debug "AWS Account ID: $ACCOUNT_ID"
 }
 
-
 get_config() {
     print_info "Loading configuration for environment: $ENVIRONMENT from $CONFIG_FILE"
 
     # Global config
     NAME=$(jq -r ".name" "$CONFIG_FILE")
     REGION=$(jq -r ".region" "$CONFIG_FILE")
-
-    # OIDC config
-    OIDC_ARN=$(jq -r ".oidc.oidc_arn" "$CONFIG_FILE")
-    GITHUB_ORG=$(jq -r ".oidc.github_org" "$CONFIG_FILE")
-    GITHUB_REPO=$(jq -r ".oidc.github_repo" "$CONFIG_FILE")
 
     # Environment-specific config
     if ! jq -e ".environments.${ENVIRONMENT}" "$CONFIG_FILE" > /dev/null 2>&1; then
@@ -55,20 +48,15 @@ get_config() {
     # Derived values
     PACKAGE_BUCKET="${NAME}-cf-templates-${ACCOUNT_ID}-${REGION}"
     STACK_NAME="${NAME}-${ENVIRONMENT}"
-    OIDC_STACK_NAME="${NAME}-github-oidc"
 
     # print variables
     print_debug "Environment: $ENVIRONMENT"
     print_debug "Name: $NAME"
     print_debug "Package Bucket: $PACKAGE_BUCKET"
     print_debug "Stack Name: $STACK_NAME"
-    print_debug "OIDC Stack Name: $OIDC_STACK_NAME"
-    print_debug "GitHub Org: $GITHUB_ORG"
-    print_debug "GitHub Repo: $GITHUB_REPO"
     print_debug "Region: $REGION"
     print_debug "Parameters: $PARAMETERS"
 }
-
 
 package_static() {
     print_info "Packaging static site content..."
@@ -85,13 +73,11 @@ package_artifacts() {
         --region $REGION \
         --template-file ${ROOT_DIR}/templates/main.yaml \
         --s3-bucket $PACKAGE_BUCKET \
-        --output-template-file ${ROOT_DIR}/packaged.template
-    then
+        --output-template-file ${ROOT_DIR}/packaged.template; then
         print_error "Failed to package artifacts"
         exit 1
     fi
 }
-
 
 deploy_infrastructure() {
     print_info "Deploying infrastructure..."
@@ -101,19 +87,17 @@ deploy_infrastructure() {
         --template-file ${ROOT_DIR}/packaged.template \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
         --parameter-overrides $PARAMETERS \
-        --tags Solution=$NAME Environment=$ENVIRONMENT
-    then
+        --tags Solution=$NAME Environment=$ENVIRONMENT; then
         print_error "Failed to deploy infrastructure"
         exit 1
     fi
     print_success "Infrastructure deployment completed!"
 }
 
-
 get_stack_outputs() {
     print_info "Retrieving stack outputs..."
 
-    if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" &>/dev/null; then
+    if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" &> /dev/null; then
         print_error "Failed to retrieve stack information"
         exit 1
     fi
@@ -122,19 +106,19 @@ get_stack_outputs() {
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
         --query 'Stacks[0].Outputs[?OutputKey==`S3BucketRootName`].OutputValue' \
-        --output text 2>/dev/null)
+        --output text 2> /dev/null)
 
     DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
         --query 'Stacks[0].Outputs[?OutputKey==`CFDistributionId`].OutputValue' \
-        --output text 2>/dev/null)
+        --output text 2> /dev/null)
 
     WEBSITE_URL=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
         --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDomainName`].OutputValue' \
-        --output text 2>/dev/null)
+        --output text 2> /dev/null)
 
     if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
         print_warning "Could not retrieve bucket name from stack outputs"
@@ -154,7 +138,6 @@ get_stack_outputs() {
         print_info "Website URL: https://$WEBSITE_URL"
     fi
 }
-
 
 sync_site_content() {
     print_info "Syncing site content to S3..."
@@ -181,7 +164,6 @@ sync_site_content() {
     print_success "Site content synced to s3://$BUCKET_NAME"
 }
 
-
 invalidate_cloudfront_cache() {
     print_info "Invalidating CloudFront cache..."
 
@@ -207,7 +189,6 @@ invalidate_cloudfront_cache() {
     print_success "CloudFront cache invalidation requested."
 }
 
-
 validate_template() {
     print_info "Validating CloudFormation template..."
 
@@ -223,7 +204,6 @@ validate_template() {
     print_success "Template validation successful!"
 }
 
-
 print_help() {
     print_info "Usage: $0 <action> [environment]"
     print_info ""
@@ -236,7 +216,6 @@ print_help() {
     print_info ""
     print_info "See deploy-config.json for available environments"
 }
-
 
 main() {
     check_dependencies

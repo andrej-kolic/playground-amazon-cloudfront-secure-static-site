@@ -4,7 +4,7 @@
 # Usage: ./oidc.sh
 #
 # This script sets up GitHub OIDC provider and IAM role for GitHub Actions authentication.
-# This is a one-time, account-level operation that enables GitHub Actions to deploy 
+# This is a one-time, account-level operation that enables GitHub Actions to deploy
 # infrastructure without storing AWS credentials in GitHub secrets.
 
 SCRIPTS_DIR=$(dirname "$0")
@@ -44,7 +44,7 @@ get_oidc_config() {
 deploy_oidc() {
     print_info "⚠️  OIDC setup is a one-time, account-level operation."
     print_info "Deploying GitHub OIDC Provider and IAM Role..."
-    
+
     if [ -z "$OIDC_ARN" ]; then
         print_debug "No existing OIDC provider ARN provided. A new OIDC provider will be created."
     else
@@ -58,23 +58,22 @@ deploy_oidc() {
         --template-file ${ROOT_DIR}/templates/github-oidc.yaml \
         --capabilities CAPABILITY_NAMED_IAM \
         --parameter-overrides \
-            ProjectName=$NAME \
-            GitHubOrg=$GITHUB_ORG \
-            GitHubRepo=$GITHUB_REPO \
-            OIDCProviderArn="$OIDC_ARN" \
-        --tags Solution=$NAME Component=OIDC
-    then
+        ProjectName=$NAME \
+        GitHubOrg=$GITHUB_ORG \
+        GitHubRepo=$GITHUB_REPO \
+        OIDCProviderArn="$OIDC_ARN" \
+        --tags Solution=$NAME Component=OIDC; then
         print_error "Failed to deploy OIDC infrastructure"
         exit 1
     fi
-    
+
     # Get the role ARN for output
     GITHUB_ROLE_ARN=$(aws cloudformation describe-stacks \
         --stack-name "$OIDC_STACK_NAME" \
         --region "$REGION" \
         --query 'Stacks[0].Outputs[?OutputKey==`GitHubActionsRoleArn`].OutputValue' \
-        --output text 2>/dev/null)
-    
+        --output text 2> /dev/null)
+
     print_success "OIDC deployment completed!"
     print_info "Add the following secret to your GitHub repository:"
     print_info "   Name: AWS_ROLE_ARN"

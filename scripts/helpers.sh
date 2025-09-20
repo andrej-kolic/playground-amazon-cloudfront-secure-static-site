@@ -40,4 +40,3 @@ check_dependencies() {
         exit 1
     fi
 }
-
