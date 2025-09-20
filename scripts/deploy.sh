@@ -107,19 +107,19 @@ get_stack_outputs() {
     BUCKET_NAME=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
-        --query "Stacks[0].Outputs[?OutputKey==$(S3BucketRootName)].OutputValue" \
+        --query "Stacks[0].Outputs[?OutputKey==\`S3BucketRootName\`].OutputValue" \
         --output text 2> /dev/null)
 
     DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
-        --query "Stacks[0].Outputs[?OutputKey==$(CFDistributionId)].OutputValue" \
+        --query "Stacks[0].Outputs[?OutputKey==\`CFDistributionId\`].OutputValue" \
         --output text 2> /dev/null)
 
     WEBSITE_URL=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
-        --query "Stacks[0].Outputs[?OutputKey==$(CloudFrontDomainName)].OutputValue" \
+        --query "Stacks[0].Outputs[?OutputKey==\`CloudFrontDomainName\`].OutputValue" \
         --output text 2> /dev/null)
 
     if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then

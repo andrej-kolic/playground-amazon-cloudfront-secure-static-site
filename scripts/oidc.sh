@@ -74,7 +74,7 @@ deploy_oidc() {
     GITHUB_ROLE_ARN=$(aws cloudformation describe-stacks \
         --stack-name "$OIDC_STACK_NAME" \
         --region "$REGION" \
-        --query "Stacks[0].Outputs[?OutputKey==$(GitHubActionsRoleArn)].OutputValue" \
+        --query "Stacks[0].Outputs[?OutputKey==\`GitHubActionsRoleArn\`].OutputValue" \
         --output text 2> /dev/null)
 
     print_success "OIDC deployment completed!"
