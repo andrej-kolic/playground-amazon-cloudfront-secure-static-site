@@ -52,20 +52,20 @@ deploy_oidc() {
     fi
 
     print_debug "Deploying OIDC CloudFormation stack..."
-    local PARAMETERS=" \
-        ProjectName=$NAME \
-        GitHubOrg=$GITHUB_ORG \
-        GitHubRepo=$GITHUB_REPO \
-        OIDCProviderArn=$OIDC_ARN \
-    "
+    local PARAMETERS=(
+        "ProjectName=$NAME"
+        "GitHubOrg=$GITHUB_ORG"
+        "GitHubRepo=$GITHUB_REPO"
+        "OIDCProviderArn=$OIDC_ARN"
+    )
 
     if ! aws cloudformation deploy \
         --region "$REGION" \
         --stack-name "$OIDC_STACK_NAME" \
         --template-file "${ROOT_DIR}"/templates/github-oidc.yaml \
         --capabilities CAPABILITY_NAMED_IAM \
-        --parameter-overrides "$PARAMETERS" \
-        --tags Solution="$NAME" Component=OIDC; then 
+        --parameter-overrides "${PARAMETERS[@]}" \
+        --tags Solution="$NAME" Component=OIDC; then
         print_error "Failed to deploy OIDC infrastructure"
         exit 1
     fi
