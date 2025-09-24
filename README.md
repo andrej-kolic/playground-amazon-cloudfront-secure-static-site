@@ -66,7 +66,7 @@ To deploy the solution, you can use several methods:
 
 1. **GitHub Actions with OIDC (Recommended)** - Secure automated deployment
 2. **AWS CLI** - Command line deployment
-3. **AWS CloudFormation Console** - Manual deployment through AWS Console  
+3. **AWS CloudFormation Console** - Manual deployment through AWS Console
 
 > **Note:** You must have IAM permissions to launch CloudFormation templates that create IAM roles, and to create all the AWS resources in the solution. Also, you are responsible for the cost of the AWS services used while running this solution. For more information about costs, see the pricing pages for each AWS service.
 
@@ -75,51 +75,54 @@ To deploy the solution, you can use several methods:
 This method uses OpenID Connect (OIDC) for secure authentication without storing long-lived AWS credentials in GitHub.
 
 **Prerequisites:**
+
 - Forked repository with GitHub Actions enabled
 - AWS CLI configured with admin permissions for initial setup
 
 **Setup Steps:**
 
 1. **Configure the deployment settings** in `deploy-config.json`:
-    ```json
-    {
-       "name": "your-project-name",
-       "region": "us-east-1",
-       "oidc": {
-          "oidc_arn": "",
-          "github_org": "your-github-username",
-          "github_repo": "your-repo-name"
+
+   ```json
+   {
+     "name": "your-project-name",
+     "region": "us-east-1",
+     "oidc": {
+       "oidc_arn": "",
+       "github_org": "your-github-username",
+       "github_repo": "your-repo-name"
+     },
+     "environments": {
+       "dev": {
+         "parameters": {
+           "DomainName": "example.com",
+           "SubDomain": "dev",
+           "HostedZoneId": "Z1234567890ABC",
+           "CreateApex": "no"
+         }
        },
-       "environments": {
-          "dev": {
-             "parameters": {
-                "DomainName": "example.com",
-                "SubDomain": "dev",
-                "HostedZoneId": "Z1234567890ABC",
-                "CreateApex": "no"
-             }
-          },
-          "staging": {
-             "parameters": {
-                "DomainName": "example.com",
-                "SubDomain": "staging",
-                "HostedZoneId": "Z1234567890ABC",
-                "CreateApex": "no"
-             }
-          },
-          "prod": {
-             "parameters": {
-                "DomainName": "example.com",
-                "SubDomain": "prod",
-                "HostedZoneId": "Z1234567890ABC",
-                "CreateApex": "yes"
-             }
-          }
+       "staging": {
+         "parameters": {
+           "DomainName": "example.com",
+           "SubDomain": "staging",
+           "HostedZoneId": "Z1234567890ABC",
+           "CreateApex": "no"
+         }
+       },
+       "prod": {
+         "parameters": {
+           "DomainName": "example.com",
+           "SubDomain": "prod",
+           "HostedZoneId": "Z1234567890ABC",
+           "CreateApex": "yes"
+         }
        }
-    }
-    ```
+     }
+   }
+   ```
 
 2. **One-time OIDC Setup**:
+
    - Go to GitHub Actions in your repository
    - Run the "Setup GitHub OIDC Provider" workflow
    - Check the confirmation box and run the workflow
@@ -127,11 +130,12 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
    - Remove any existing AWS access key secrets (no longer needed)
 
    Alternatively, you can run locally:
+
    ```bash
    ./scripts/oidc.sh
    ```
 
-3. **Deploy via GitHub Actions**: 
+3. **Deploy via GitHub Actions**:
    - Use the "Deploy Static Website" workflow
    - Select environment (dev/staging/prod) and action (infra/content)
    - Or push to trigger automatic deployment
@@ -143,6 +147,7 @@ For detailed OIDC setup instructions, see [docs/OIDC_SETUP.md](docs/OIDC_SETUP.m
 This method uses the included deployment scripts to deploy the solution directly from your local machine.
 
 **Prerequisites:**
+
 - AWS CLI configured with appropriate permissions
 - `jq` utility installed for JSON parsing
 - `make` utility available
@@ -150,12 +155,14 @@ This method uses the included deployment scripts to deploy the solution directly
 **Setup Steps:**
 
 1. **Clone or download this repository**:
+
    ```bash
    git clone https://github.com/awslabs/aws-cloudformation-templates.git
    cd aws-cloudformation-templates/Solutions/CloudFrontSecureStaticSite
    ```
 
 2. **Configure deployment settings** in `deploy-config.json`:
+
    ```json
    {
      "name": "your-project-name",
@@ -187,10 +194,11 @@ This method uses the included deployment scripts to deploy the solution directly
    ```
 
 3. **Deploy the infrastructure**:
+
    ```bash
    # Deploy to development environment
    ./scripts/deploy.sh infra dev
-   
+
    # Deploy to production environment
    ./scripts/deploy.sh infra prod
    ```
@@ -213,16 +221,19 @@ This method uses the included deployment scripts to deploy the solution directly
 **Script workflow:**
 
 The `infra` action will:
+
 1. Package the static site content using `make package-static`
 2. Create an S3 bucket for CloudFormation artifacts
 3. Package CloudFormation templates with nested stacks
 4. Deploy the complete infrastructure stack
 
 The `content` action will:
+
 1. Sync files from `www/` directory to the S3 bucket
 2. Create a CloudFront cache invalidation to refresh content
 
 **Example deployment workflow:**
+
 ```bash
 # Validate templates first
 ./scripts/deploy.sh validate
@@ -286,7 +297,7 @@ The `content` action will:
 
 To change the Response Header Policy of the site:
 
-1. Make your changes by editing ResponseHeadersPolicy in `templates/cloudfront-site.yaml`. Here you can modify any of the headers for Strict-Transport-Security, Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, and Referrer-Policy. 
+1. Make your changes by editing ResponseHeadersPolicy in `templates/cloudfront-site.yaml`. Here you can modify any of the headers for Strict-Transport-Security, Content-Security-Policy, X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, and Referrer-Policy.
 2. Deploy the solution using one of described methods
 
 ## Contributing
