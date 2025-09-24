@@ -19,7 +19,7 @@ Resources:
   CopyCustomResource:
     Type: 'AWS::CloudFormation::CustomResource'
     Properties:
-      ServiceToken: !GetAtt CopyFunction.Arn 
+      ServiceToken: !GetAtt CopyFunction.Arn
       ServiceTimeout: 30
       PhysicalResourceId: !Sub '${ProjectName}-${Environment}-copy-custom-resource'
 
@@ -112,11 +112,10 @@ Resources:
       Role: !GetAtt CopyRole.Arn
       Runtime: nodejs20.x
       Timeout: 300
-      ReservedConcurrentExecutions: 5  # Limits to 5 concurrent executions
+      ReservedConcurrentExecutions: 5 # Limits to 5 concurrent executions
       Tags:
         Solution: !Ref ProjectName
         Environment: !Ref Environment
-
 
 Outputs:
   S3BucketRoot:

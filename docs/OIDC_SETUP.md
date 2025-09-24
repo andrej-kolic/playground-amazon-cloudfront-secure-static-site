@@ -33,6 +33,7 @@ Alternatively, run the setup locally:
 ```
 
 This will:
+
 - Create a GitHub OIDC Provider (if one doesn't exist)
 - Create an IAM Role with necessary permissions
 - Output the Role ARN and setup instructions
@@ -42,6 +43,7 @@ This will:
 The OIDC setup is a **one-time, account-level operation** that creates:
 
 1. **GitHub OIDC Identity Provider** (if not already present)
+
    - Allows GitHub Actions to authenticate with AWS
    - Account-wide resource (one per AWS account)
 
@@ -60,7 +62,7 @@ The OIDC setup uses configuration from `deploy-config.json`:
   "region": "us-east-1",
   "oidc": {
     "oidc_arn": "",
-    "github_org": "your-github-username", 
+    "github_org": "your-github-username",
     "github_repo": "your-repo-name"
   },
   "environments": {
@@ -117,6 +119,7 @@ If an OIDC provider already exists, the script automatically detects and uses it
 ### Permission Issues
 
 Ensure the IAM role has the necessary permissions for:
+
 - CloudFormation operations
 - S3 bucket management
 - CloudFront operations
@@ -125,6 +128,7 @@ Ensure the IAM role has the necessary permissions for:
 ### Token Validation Errors
 
 Check that:
+
 - The repository name matches exactly in the configuration
 - The GitHub organization/username is correct
 - The workflow has the correct permissions set

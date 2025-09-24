@@ -225,7 +225,7 @@ Outputs:
     Value: !GetAtt GitHubActionsRole.Arn
     Export:
       Name: !Sub '${AWS::StackName}-GitHubActionsRoleArn'
-  
+
   OIDCProviderArn:
     Description: 'ARN of the GitHub OIDC Provider'
     Value: !If

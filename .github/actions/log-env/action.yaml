@@ -1,7 +1,7 @@
 name: 'Log Environment'
 description: 'Logs environment variables for a job'
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - run: |
         echo ""
