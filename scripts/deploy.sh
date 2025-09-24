@@ -39,10 +39,11 @@ get_config() {
         exit 1
     fi
 
-    PARAMETERS="ProjectName=${NAME} Environment=${ENVIRONMENT}"
+    # Use array to store parameters properly
+    PARAMETERS=("ProjectName=${NAME}" "Environment=${ENVIRONMENT}")
     for param in $(jq -r ".environments.${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
         value=$(jq -r ".environments.${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
-        PARAMETERS="${PARAMETERS} ${param}=${value}"
+        PARAMETERS+=("${param}=${value}")
     done
 
     # Derived values
@@ -55,7 +56,7 @@ get_config() {
     print_debug "Package Bucket: $PACKAGE_BUCKET"
     print_debug "Stack Name: $STACK_NAME"
     print_debug "Region: $REGION"
-    print_debug "Parameters: $PARAMETERS"
+    print_debug "Parameters: ${PARAMETERS[*]}"
 }
 
 package_static() {
@@ -81,12 +82,13 @@ package_artifacts() {
 
 deploy_infrastructure() {
     print_info "Deploying infrastructure..."
+
     if ! aws cloudformation deploy \
         --region "$REGION" \
         --stack-name "$STACK_NAME" \
         --template-file "${ROOT_DIR}/packaged.template" \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
-        --parameter-overrides "$PARAMETERS" \
+        --parameter-overrides "${PARAMETERS[@]}" \
         --tags Solution="$NAME" Environment="$ENVIRONMENT"; then
         print_error "Failed to deploy infrastructure"
         exit 1
@@ -105,19 +107,19 @@ get_stack_outputs() {
     BUCKET_NAME=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
-        --query "Stacks[0].Outputs[?OutputKey==$(S3BucketRootName)].OutputValue" \
+        --query "Stacks[0].Outputs[?OutputKey==\`S3BucketRootName\`].OutputValue" \
         --output text 2> /dev/null)
 
     DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
-        --query "Stacks[0].Outputs[?OutputKey==$(CFDistributionId)].OutputValue" \
+        --query "Stacks[0].Outputs[?OutputKey==\`CFDistributionId\`].OutputValue" \
         --output text 2> /dev/null)
 
     WEBSITE_URL=$(aws cloudformation describe-stacks \
         --stack-name "$STACK_NAME" \
         --region "$REGION" \
-        --query "Stacks[0].Outputs[?OutputKey==$(CloudFrontDomainName)].OutputValue" \
+        --query "Stacks[0].Outputs[?OutputKey==\`CloudFrontDomainName\`].OutputValue" \
         --output text 2> /dev/null)
 
     if [ -z "$BUCKET_NAME" ] || [ "$BUCKET_NAME" = "None" ]; then
@@ -252,4 +254,7 @@ main() {
     esac
 }
 
-main
+# Only run main if script is executed directly (not sourced)
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main
+fi
