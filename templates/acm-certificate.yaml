@@ -51,7 +51,7 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
-      
+
 Outputs:
   CertificateArn:
     Description: Issued certificate
