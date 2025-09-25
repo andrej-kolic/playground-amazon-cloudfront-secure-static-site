@@ -1,4 +1,4 @@
-name: Validate Templates
+name: CloudFormation templates validation
 
 on:
   push:
