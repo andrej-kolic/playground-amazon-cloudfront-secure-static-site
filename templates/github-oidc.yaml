@@ -74,6 +74,7 @@ Resources:
               - cloudformation:DeleteChangeSet
               - cloudformation:DescribeChangeSet
               - cloudformation:GetTemplate
+              - cloudformation:GetTemplateSummary
               - cloudformation:ValidateTemplate
               - cloudformation:Package
               - cloudformation:Deploy
