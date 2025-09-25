@@ -66,10 +66,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log Environment
+      - name: Log Environment 2
         uses: ./.github/actions/log-env
 
-      - name: Deploy to development
+      - name: Deploy to development 2
         uses: ./.github/actions/deploy
         with:
           environment: dev

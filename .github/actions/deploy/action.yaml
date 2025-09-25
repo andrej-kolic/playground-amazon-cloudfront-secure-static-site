@@ -37,7 +37,7 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Configure AWS credentials using OIDC
+    - name: Configure AWS credentials using OIDC 2
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: ${{ inputs.aws-role-arn }}
