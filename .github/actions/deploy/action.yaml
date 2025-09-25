@@ -47,6 +47,7 @@ runs:
         echo ""
         echo "github.event.inputs.environment: ${{ github.event.inputs.environment }} (default: ${{ env.DEFAULT_ENVIRONMENT }})"
         echo "github.event.inputs.action: ${{ github.event.inputs.action }} (default: ${{ env.DEFAULT_ACTION }})"
+        echo ""
 
     - name: Configure AWS credentials using OIDC 2
       uses: aws-actions/configure-aws-credentials@v4
