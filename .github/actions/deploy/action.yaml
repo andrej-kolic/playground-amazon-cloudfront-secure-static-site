@@ -1,0 +1,104 @@
+name: 'Deploy CloudFront Site'
+description: 'Deploy static website to AWS CloudFront with S3 backend'
+inputs:
+  environment:
+    description: 'Deployment environment (dev, staging, prod)'
+    required: true
+  action:
+    description: 'Deployment action (infra, content)'
+    required: true
+  aws-role-arn:
+    description: 'AWS IAM Role ARN for OIDC authentication'
+    required: true
+  aws-region:
+    description: 'AWS region for deployment'
+    required: false
+    default: 'us-east-1'
+  create-release:
+    description: 'Whether to create a GitHub release (prod only)'
+    required: false
+    default: 'false'
+  comment-pr:
+    description: 'Whether to comment on PR with deployment info'
+    required: false
+    default: 'false'
+  github-token:
+    description: 'GitHub token for release creation and PR comments'
+    required: false
+
+outputs:
+  website-url:
+    description: 'The deployed website URL'
+    value: ${{ steps.get-outputs.outputs.website-url }}
+  distribution-id:
+    description: 'CloudFront distribution ID'
+    value: ${{ steps.get-outputs.outputs.distribution-id }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS credentials using OIDC
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws-role-arn }}
+        role-session-name: github-actions-${{ inputs.environment }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Deploy to ${{ inputs.environment }}
+      shell: bash
+      run: |
+        ./scripts/deploy.sh ${{ inputs.action }} ${{ inputs.environment }}
+
+    - name: Get deployment outputs
+      id: get-outputs
+      shell: bash
+      run: |
+        output=$(./scripts/deploy.sh outputs ${{ inputs.environment }})
+        echo "Raw output: $output"
+        
+        # Extract website URL
+        website_url=$(echo "$output" | grep -o 'Website URL: https://[^[:space:]]*' | cut -d' ' -f3)
+        if [ -n "$website_url" ]; then
+          echo "website-url=$website_url" >> $GITHUB_OUTPUT
+          echo "Website URL found: $website_url"
+        fi
+        
+        # Extract distribution ID
+        distribution_id=$(echo "$output" | grep -o 'Distribution ID: [^[:space:]]*' | cut -d' ' -f3)
+        if [ -n "$distribution_id" ]; then
+          echo "distribution-id=$distribution_id" >> $GITHUB_OUTPUT
+          echo "Distribution ID found: $distribution_id"
+        fi
+
+    - name: Comment PR with deployment info
+      if: inputs.comment-pr == 'true' && steps.get-outputs.outputs.website-url != ''
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ inputs.github-token }}
+        script: |
+          const websiteUrl = '${{ steps.get-outputs.outputs.website-url }}';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🚀 **Development Environment Deployed**\n\n**Website URL:** ${websiteUrl}\n\n*This deployment is automatically updated with each push to this PR.*`
+          });
+
+    - name: Create GitHub release
+      if: inputs.create-release == 'true' && inputs.environment == 'prod'
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: release-${{ github.run_number }}
+        name: Production Release ${{ github.run_number }}
+        body: |
+          🚀 **Production Deployment**
+
+          **Commit:** ${{ github.sha }}
+          **Deployed by:** ${{ github.actor }}
+          **Workflow:** ${{ github.workflow }}
+          **Website URL:** ${{ steps.get-outputs.outputs.website-url }}
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}

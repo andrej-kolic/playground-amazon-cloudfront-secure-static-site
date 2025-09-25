@@ -69,42 +69,15 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: github-actions-dev
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
-
       - name: Deploy to development
-        run: |
-          action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh $action dev
-
-      - name: Comment PR with deployment info
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: ./.github/actions/deploy
         with:
-          script: |
-            const { execSync } = require('child_process');
-            try {
-              const output = execSync('./scripts/deploy.sh outputs dev', { encoding: 'utf8' });
-              console.log('outputs:\n', output);
-
-              const websiteUrl = output.match(/Website URL: (https?:\/\/[^\s]+)/);
-              console.log('websiteUrl:', websiteUrl);
-
-              if (websiteUrl) {
-                github.rest.issues.createComment({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: `🚀 **Development Environment Deployed**\n\n**Website URL:** ${websiteUrl[1]}\n\n*This deployment is automatically updated with each push to this PR.*`
-                });
-              }
-            } catch (error) {
-              console.log('Could not get deployment info:', error.message);
-            }
+          environment: dev
+          action: ${{ github.event.inputs.action || env.DEFAULT_ACTION }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          comment-pr: ${{ github.event_name == 'pull_request' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   # Deploy to staging environment
   deploy-staging:
@@ -127,17 +100,13 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: github-actions-staging
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
-
       - name: Deploy to staging
-        run: |
-          action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh $action staging
+        uses: ./.github/actions/deploy
+        with:
+          environment: staging
+          action: ${{ github.event.inputs.action || env.DEFAULT_ACTION }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
   # Deploy to production environment
   deploy-prod:
@@ -158,30 +127,12 @@ jobs:
       - name: Log Environment
         uses: ./.github/actions/log-env
 
-      - name: Configure AWS credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          role-session-name: github-actions-production
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
-
       - name: Deploy to production
-        run: |
-          action="${{ github.event.inputs.action || env.DEFAULT_ACTION }}"
-          ./scripts/deploy.sh $action prod
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: ./.github/actions/deploy
         with:
-          tag_name: release-${{ github.run_number }}
-          name: Production Release ${{ github.run_number }}
-          body: |
-            🚀 **Production Deployment**
-
-            **Commit:** ${{ github.sha }}
-            **Deployed by:** ${{ github.actor }}
-            **Workflow:** ${{ github.workflow }}
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          environment: prod
+          action: ${{ github.event.inputs.action || env.DEFAULT_ACTION }}
+          aws-role-arn: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          create-release: 'true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
