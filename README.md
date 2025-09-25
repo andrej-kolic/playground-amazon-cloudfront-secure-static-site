@@ -8,6 +8,25 @@ Use this solution to create a secure static website for your registered domain n
 - Uses [CloudFront Response Header Policies](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/adding-response-headers.html) to add security headers to every server response
 - Is deployed with [AWS CloudFormation](https://aws.amazon.com/cloudformation/)
 
+## Enhanced Features
+
+This solution is an enhanced version of the [AWS CloudFront Secure Static Site sample](https://github.com/aws-samples/amazon-cloudfront-secure-static-site) with additional features:
+
+### 🚀 **Multi-Environment Support**
+- Deploy to multiple environments (dev, staging, prod) with separate configurations
+- Environment-specific domain names and settings
+- Isolated infrastructure stacks per environment
+
+### 🔧 **Flexible Deployment Options**
+- **GitHub Actions with OIDC**: Secure automated deployments without long-lived credentials
+- **Local Shell Scripts**: Command-line deployment with helper scripts
+- **AWS Console**: Traditional CloudFormation console deployment
+
+### 📦 **Advanced Configuration Management**
+- JSON-based configuration system (`deploy-config.json`)
+- Environment-specific parameter management
+- Automated infrastructure and content deployment workflows
+
 For more information about each of these components, see the **Solution details** section on this page.
 
 ## Solution overview
