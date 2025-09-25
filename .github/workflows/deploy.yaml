@@ -63,7 +63,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to development 2
+      - name: Deploy to development
         uses: ./.github/actions/deploy
         with:
           environment: dev
