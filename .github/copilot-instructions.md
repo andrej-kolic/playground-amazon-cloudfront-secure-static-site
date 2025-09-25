@@ -28,7 +28,7 @@ All environments are defined in `deploy-config.json`:
 
 ```json
 {
-  "name": "project-name",
+  "project_name": "project-name",
   "oidc": {
     "oidc_arn": "",
     "github_org": "github-username",
@@ -79,9 +79,9 @@ One-time GitHub OIDC setup (account-level, creates IAM role for GitHub Actions)
 **Key Implementation Details**:
 
 - Uses `jq` to parse `deploy-config.json`
-- Creates template package bucket: `{name}-cf-templates-{account-id}-{region}`
-- Stack naming: `{name}-{environment}` (e.g., `mysite-dev`)
-- OIDC stack naming: `{name}-github-oidc`
+- Creates template package bucket: `{project_name}-cf-templates-{account-id}-{region}`
+- Stack naming: `{project_name}-{environment}` (e.g., `mysite-dev`)
+- OIDC stack naming: `{project_name}-github-oidc`
 
 ### GitHub Actions Integration
 

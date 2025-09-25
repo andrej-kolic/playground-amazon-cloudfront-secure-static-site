@@ -85,7 +85,7 @@ This method uses OpenID Connect (OIDC) for secure authentication without storing
 
    ```json
    {
-     "name": "your-project-name",
+     "project_name": "your-project-name",
      "region": "us-east-1",
      "oidc": {
        "oidc_arn": "",
@@ -165,7 +165,7 @@ This method uses the included deployment scripts to deploy the solution directly
 
    ```json
    {
-     "name": "your-project-name",
+     "project_name": "your-project-name",
      "region": "us-east-1",
      "oidc": {
        "oidc_arn": "",

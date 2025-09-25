@@ -21,7 +21,7 @@ get_oidc_config() {
     print_info "Loading OIDC configuration from $CONFIG_FILE"
 
     # Global config
-    NAME=$(jq -r ".name" "$CONFIG_FILE")
+    NAME=$(jq -r ".project_name" "$CONFIG_FILE")
     REGION=$(jq -r ".region" "$CONFIG_FILE")
 
     # OIDC config

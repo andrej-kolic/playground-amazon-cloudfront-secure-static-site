@@ -30,7 +30,7 @@ get_config() {
     print_info "Loading configuration for environment: $ENVIRONMENT from $CONFIG_FILE"
 
     # Global config
-    NAME=$(jq -r ".name" "$CONFIG_FILE")
+    NAME=$(jq -r ".project_name" "$CONFIG_FILE")
     REGION=$(jq -r ".region" "$CONFIG_FILE")
 
     # Environment-specific config
