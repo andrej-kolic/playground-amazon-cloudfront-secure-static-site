@@ -30,7 +30,7 @@ get_config() {
     print_info "Loading configuration for environment: $ENVIRONMENT from $CONFIG_FILE"
 
     # Global config
-    NAME=$(jq -r ".project_name" "$CONFIG_FILE")
+    PROJECT_NAME=$(jq -r ".project_name" "$CONFIG_FILE")
     REGION=$(jq -r ".region" "$CONFIG_FILE")
 
     # Environment-specific config
@@ -40,19 +40,19 @@ get_config() {
     fi
 
     # Use array to store parameters properly
-    PARAMETERS=("ProjectName=${NAME}" "Environment=${ENVIRONMENT}")
+    PARAMETERS=("ProjectName=${PROJECT_NAME}" "Environment=${ENVIRONMENT}")
     for param in $(jq -r ".environments.${ENVIRONMENT}.parameters | keys[]" "$CONFIG_FILE"); do
         value=$(jq -r ".environments.${ENVIRONMENT}.parameters.${param}" "$CONFIG_FILE")
         PARAMETERS+=("${param}=${value}")
     done
 
     # Derived values
-    PACKAGE_BUCKET="${NAME}-cf-templates-${ACCOUNT_ID}-${REGION}"
-    STACK_NAME="${NAME}-${ENVIRONMENT}"
+    PACKAGE_BUCKET="${PROJECT_NAME}-cf-templates-${ACCOUNT_ID}-${REGION}"
+    STACK_NAME="${PROJECT_NAME}-${ENVIRONMENT}"
 
     # print variables
     print_debug "Environment: $ENVIRONMENT"
-    print_debug "Name: $NAME"
+    print_debug "Project Name: $PROJECT_NAME"
     print_debug "Package Bucket: $PACKAGE_BUCKET"
     print_debug "Stack Name: $STACK_NAME"
     print_debug "Region: $REGION"
@@ -89,7 +89,7 @@ deploy_infrastructure() {
         --template-file "${ROOT_DIR}/packaged.template" \
         --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
         --parameter-overrides "${PARAMETERS[@]}" \
-        --tags Solution="$NAME" Environment="$ENVIRONMENT"; then
+        --tags Solution="$PROJECT_NAME" Environment="$ENVIRONMENT"; then
         print_error "Failed to deploy infrastructure"
         exit 1
     fi
