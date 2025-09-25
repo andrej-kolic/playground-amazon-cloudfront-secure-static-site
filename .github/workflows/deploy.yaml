@@ -44,15 +44,21 @@ env:
   DEFAULT_ACTION: content # Default action for triggers other than workflow_dispatch
   DEFAULT_ENVIRONMENT: dev # Default environment for triggers other than workflow_dispatch
 
+permissions:
+  id-token: write
+  contents: write
+  issues: write
+  pull-requests: write
+  
 jobs:
   # Deploy to development environment
   deploy-dev:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      issues: write
-      pull-requests: write
+    # permissions:
+    #   id-token: write
+    #   contents: read
+    #   issues: write
+    #   pull-requests: write
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/develop') ||
       (github.event_name == 'pull_request' && github.head_ref == 'develop') ||
@@ -66,8 +72,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log Environment 2
-        uses: ./.github/actions/log-env
+      # - name: Log Environment 2
+      #   uses: ./.github/actions/log-env
 
       - name: Deploy to development 2
         uses: ./.github/actions/deploy
@@ -82,9 +88,9 @@ jobs:
   # Deploy to staging environment
   deploy-staging:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
+    # permissions:
+    #   id-token: write
+    #   contents: read
     if: |
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) ||
       (
@@ -97,8 +103,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log Environment
-        uses: ./.github/actions/log-env
+      # - name: Log Environment
+      #   uses: ./.github/actions/log-env
 
       - name: Deploy to staging
         uses: ./.github/actions/deploy
@@ -111,9 +117,9 @@ jobs:
   # Deploy to production environment
   deploy-prod:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
+    # permissions:
+    #   id-token: write
+    #   contents: write
     # needs: [validate, deploy-staging]
     if: |
       github.event_name == 'workflow_dispatch' &&
@@ -124,8 +130,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Log Environment
-        uses: ./.github/actions/log-env
+      # - name: Log Environment
+      #   uses: ./.github/actions/log-env
 
       - name: Deploy to production
         uses: ./.github/actions/deploy

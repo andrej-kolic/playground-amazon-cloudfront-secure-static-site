@@ -37,6 +37,17 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Log Environment
+      shell: bash
+      run: |
+        echo ""
+        echo "GITHUB_EVENT_NAME: $GITHUB_EVENT_NAME"
+        echo "GITHUB_REF: $GITHUB_REF"
+        echo "github.head_ref: ${{ github.head_ref }}"
+        echo ""
+        echo "github.event.inputs.environment: ${{ github.event.inputs.environment }} (default: ${{ env.DEFAULT_ENVIRONMENT }})"
+        echo "github.event.inputs.action: ${{ github.event.inputs.action }} (default: ${{ env.DEFAULT_ACTION }})"
+
     - name: Configure AWS credentials using OIDC 2
       uses: aws-actions/configure-aws-credentials@v4
       with:
