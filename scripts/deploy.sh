@@ -59,11 +59,6 @@ get_config() {
     print_debug "Parameters: ${PARAMETERS[*]}"
 }
 
-package_static() {
-    print_info "Packaging static site content..."
-    make -C "$ROOT_DIR" package-static
-}
-
 package_artifacts() {
     print_info "Packaging artifacts..."
     # Create the package bucket
@@ -234,7 +229,6 @@ main() {
             validate_template
             ;;
         "infra")
-            package_static
             package_artifacts
             deploy_infrastructure
             ;;

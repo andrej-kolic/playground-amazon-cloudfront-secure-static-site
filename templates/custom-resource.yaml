@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: ACFS3 - Cert Provider with DNS validation
-Transform: AWS::Serverless-2016-10-31
+Description: ACFS3 - S3 Buckets for static site hosting
 
 Parameters:
   ProjectName:
@@ -16,13 +15,6 @@ Parameters:
       - prod
 
 Resources:
-  CopyCustomResource:
-    Type: 'AWS::CloudFormation::CustomResource'
-    Properties:
-      ServiceToken: !GetAtt CopyFunction.Arn
-      ServiceTimeout: 30
-      PhysicalResourceId: !Sub '${ProjectName}-${Environment}-copy-custom-resource'
-
   S3BucketLogs:
     Type: AWS::S3::Bucket
     # DeletionPolicy: Retain
@@ -59,64 +51,6 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  CopyLayerVersion:
-    Type: 'AWS::Serverless::LayerVersion'
-    Properties:
-      LayerName: !Sub '${ProjectName}-${Environment}-copy-layer'
-      ContentUri: ../witch.zip
-      CompatibleRuntimes:
-        - nodejs20.x
-
-  CopyRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies:
-        - PolicyName: S3CopyPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                  - s3:ListBucket
-                  - s3:PutObject
-                  - s3:PutObjectAcl
-                Resource:
-                  - !Sub
-                    - arn:aws:s3:::${TargetBucket}/*
-                    - TargetBucket: !Ref S3BucketRoot
-                  - !Sub
-                    - arn:aws:s3:::${TargetBucket}
-                    - TargetBucket: !Ref S3BucketRoot
-
-  CopyFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: !Sub '${ProjectName}-${Environment}-copy-function'
-      CodeUri: ../www
-      Environment:
-        Variables:
-          BUCKET: !Ref S3BucketRoot
-      Handler: witch.staticHandler
-      Layers:
-        - !Ref CopyLayerVersion
-      Role: !GetAtt CopyRole.Arn
-      Runtime: nodejs20.x
-      Timeout: 300
-      ReservedConcurrentExecutions: 5 # Limits to 5 concurrent executions
-      Tags:
-        Solution: !Ref ProjectName
-        Environment: !Ref Environment
-
 Outputs:
   S3BucketRoot:
     Description: Website bucket
@@ -133,6 +67,3 @@ Outputs:
   S3BucketLogsName:
     Description: Logging bucket Name
     Value: !GetAtt S3BucketLogs.DomainName
-  CopyFunction:
-    Description: S3 helper function
-    Value: !GetAtt CopyFunction.Arn

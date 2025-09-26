@@ -57,11 +57,7 @@ This analysis provides comprehensive improvement suggestions organized by priori
 - **Configure custom error pages** beyond 403/404
 - **Add WAF integration** for additional security
 
-### 7. **Lambda Function Optimizations**
-- **Upgrade to Node.js 20.x** ARM64 architecture for better performance and cost
-- **Add error handling** for S3 operations with retry logic
-- **Implement structured logging** with AWS Lambda Powertools
-- **Add environment variable validation**
+
 
 ## 🟢 **LOW PRIORITY - Operations & Maintenance**
 
@@ -86,7 +82,6 @@ This analysis provides comprehensive improvement suggestions organized by priori
 ### 11. **Monitoring & Observability**
 - **Add CloudWatch alarms** for distribution errors and origin latency
 - **Implement custom metrics** for deployment success/failure rates
-- **Add structured logging** to Lambda functions
 - **Create operational dashboards**
 
 ## 📋 **Additional Recommendations**
@@ -98,7 +93,6 @@ This analysis provides comprehensive improvement suggestions organized by priori
 - **Include disaster recovery procedures**
 
 ### 13. **Testing Strategy**
-- **Add unit tests** for Lambda functions
 - **Implement integration tests** for CloudFormation templates
 - **Add end-to-end testing** with Playwright or Cypress
 - **Include load testing** with Artillery or k6
@@ -113,7 +107,7 @@ This analysis provides comprehensive improvement suggestions organized by priori
 
 1. **Week 1**: Security improvements (#1-3)
 2. **Week 2**: Infrastructure enhancements (#4-6)
-3. **Week 3**: Lambda and deployment optimizations (#7-8)
+3. **Week 3**: Deployment optimizations (#8)
 4. **Week 4**: Monitoring and documentation (#9-14)
 
 ## 📊 **Current Project Strengths**

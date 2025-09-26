@@ -9,7 +9,7 @@ This is a **CloudFormation-based AWS solution** for deploying secure static webs
 ### Core Stack Structure
 
 - **Main template**: `templates/main.yaml` - orchestrates three nested stacks
-- **Custom Resource stack**: Creates S3 buckets and Lambda function for content deployment
+- **Custom Resource stack**: Creates S3 buckets for static content storage
 - **ACM Certificate stack**: Manages SSL/TLS certificates (must be in us-east-1)
 - **CloudFront stack**: Distribution with security headers and origin access control
 
@@ -92,9 +92,8 @@ One-time GitHub OIDC setup (account-level, creates IAM role for GitHub Actions)
 
 ### Content Deployment Pattern
 
-1. **Build**: `make package-static` - prepares Lambda custom resource for initial content
-2. **Sync**: `aws s3 sync ./www/ s3://bucket --delete` - uploads website files
-3. **Invalidate**: `aws cloudfront create-invalidation --paths "/*"` - clears cache
+1. **Sync**: `aws s3 sync ./www/ s3://bucket --delete` - uploads website files
+2. **Invalidate**: `aws cloudfront create-invalidation --paths "/*"` - clears cache
 
 ## File Organization Conventions
 
@@ -103,7 +102,7 @@ One-time GitHub OIDC setup (account-level, creates IAM role for GitHub Actions)
 ```
 templates/
 ├── main.yaml           # Master template with nested stacks
-├── custom-resource.yaml # S3 buckets + Lambda for content deployment
+├── custom-resource.yaml # S3 buckets for static content storage
 ├── acm-certificate.yaml # SSL certificate management
 ├── cloudfront-site.yaml # CDN distribution with security headers
 └── github-oidc.yaml    # GitHub Actions authentication setup
@@ -118,7 +117,6 @@ templates/
 ### Content Structure
 
 - `www/` - Static website files (HTML, CSS, assets)
-- `source/witch/` - Lambda function for initial content deployment
 - `scripts/` - Deployment and helper scripts
   - `deploy.sh` - Main deployment script
   - `oidc.sh` - OIDC setup script
@@ -164,18 +162,7 @@ Modify `ResponseHeadersPolicy` in `templates/cloudfront-site.yaml` to adjust:
 - **Region lock**: Templates must deploy to `us-east-1` (ACM certificate requirement)
 - **Domain prerequisites**: Must have Route 53 hosted zone in same AWS account
 - **OIDC setup**: Required once per AWS account for GitHub Actions authentication
-- **Node.js dependencies**: Lambda function requires AWS SDK v3 and mime-types packages
 - **CLI tools**: Requires `jq`, `make`, and AWS CLI configured locally for script deployment
-- **Makefile integration**: Use `make package-static` for Lambda deployment preparation
-
-## Lambda Custom Resource Pattern
-
-The `source/witch/` directory contains a Node.js Lambda function that handles initial content deployment:
-
-- **Purpose**: Uploads initial static content to S3 during CloudFormation stack creation
-- **Trigger**: CloudFormation Custom Resource in `custom-resource.yaml`
-- **Build process**: `make build-static` installs dependencies, `make package-static` creates deployment zip
-- **Environment**: Uses `BUCKET` env var passed from CloudFormation
 
 ## GitHub Actions Architecture  
 
@@ -189,5 +176,4 @@ The `source/witch/` directory contains a Node.js Lambda function that handles in
 **Stack deployment failures**: Check CloudFormation events, often certificate validation issues
 **Content not updating**: Verify S3 sync and CloudFront invalidation completed
 **OIDC authentication errors**: Ensure GitHub secrets `AWS_ROLE_ARN` is set correctly
-**Lambda packaging errors**: Run `make clean && make package-static` to rebuild dependencies
 **Domain resolution issues**: Verify hosted zone configuration and DNS propagation

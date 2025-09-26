@@ -241,10 +241,9 @@ This method uses the included deployment scripts to deploy the solution directly
 
 The `infra` action will:
 
-1. Package the static site content using `make package-static`
-2. Create an S3 bucket for CloudFormation artifacts
-3. Package CloudFormation templates with nested stacks
-4. Deploy the complete infrastructure stack
+1. Create an S3 bucket for CloudFormation artifacts
+2. Package CloudFormation templates with nested stacks
+3. Deploy the complete infrastructure stack
 
 The `content` action will:
 
