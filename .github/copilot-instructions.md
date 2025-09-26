@@ -123,7 +123,6 @@ templates/
   - `deploy.sh` - Main deployment script
   - `oidc.sh` - OIDC setup script
   - `helpers.sh` - Shared utility functions (logging, dependency checks)
-- `.github/actions/log-env/` - Custom GitHub Action for environment logging
 
 ## Development Workflows
 
