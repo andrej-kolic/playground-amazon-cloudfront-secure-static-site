@@ -1,5 +1,5 @@
 {
-  "name": "aw1",
+  "project_name": "aw1",
   "region": "us-east-1",
   "oidc": {
     "oidc_arn": "",

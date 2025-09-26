@@ -21,7 +21,7 @@ get_oidc_config() {
     print_info "Loading OIDC configuration from $CONFIG_FILE"
 
     # Global config
-    NAME=$(jq -r ".name" "$CONFIG_FILE")
+    PROJECT_NAME=$(jq -r ".project_name" "$CONFIG_FILE")
     REGION=$(jq -r ".region" "$CONFIG_FILE")
 
     # OIDC config
@@ -30,10 +30,10 @@ get_oidc_config() {
     GITHUB_REPO=$(jq -r ".oidc.github_repo" "$CONFIG_FILE")
 
     # Derived values
-    OIDC_STACK_NAME="${NAME}-github-oidc"
+    OIDC_STACK_NAME="${PROJECT_NAME}-github-oidc"
 
     # Print variables for debugging
-    print_debug "Name: $NAME"
+    print_debug "Project Name: $PROJECT_NAME"
     print_debug "OIDC Stack Name: $OIDC_STACK_NAME"
     print_debug "GitHub Org: $GITHUB_ORG"
     print_debug "GitHub Repo: $GITHUB_REPO"
@@ -53,7 +53,7 @@ deploy_oidc() {
 
     print_debug "Deploying OIDC CloudFormation stack..."
     local PARAMETERS=(
-        "ProjectName=$NAME"
+        "ProjectName=$PROJECT_NAME"
         "GitHubOrg=$GITHUB_ORG"
         "GitHubRepo=$GITHUB_REPO"
         "OIDCProviderArn=$OIDC_ARN"
@@ -65,7 +65,7 @@ deploy_oidc() {
         --template-file "${ROOT_DIR}"/templates/github-oidc.yaml \
         --capabilities CAPABILITY_NAMED_IAM \
         --parameter-overrides "${PARAMETERS[@]}" \
-        --tags Solution="$NAME" Component=OIDC; then
+        --tags Solution="$PROJECT_NAME" Component=OIDC; then
         print_error "Failed to deploy OIDC infrastructure"
         exit 1
     fi

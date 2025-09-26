@@ -28,7 +28,7 @@ All environments are defined in `deploy-config.json`:
 
 ```json
 {
-  "name": "project-name",
+  "project_name": "project-name",
   "oidc": {
     "oidc_arn": "",
     "github_org": "github-username",
@@ -79,9 +79,9 @@ One-time GitHub OIDC setup (account-level, creates IAM role for GitHub Actions)
 **Key Implementation Details**:
 
 - Uses `jq` to parse `deploy-config.json`
-- Creates template package bucket: `{name}-cf-templates-{account-id}-{region}`
-- Stack naming: `{name}-{environment}` (e.g., `mysite-dev`)
-- OIDC stack naming: `{name}-github-oidc`
+- Creates template package bucket: `{project_name}-cf-templates-{account-id}-{region}`
+- Stack naming: `{project_name}-{environment}` (e.g., `mysite-dev`)
+- OIDC stack naming: `{project_name}-github-oidc`
 
 ### GitHub Actions Integration
 
@@ -123,7 +123,6 @@ templates/
   - `deploy.sh` - Main deployment script
   - `oidc.sh` - OIDC setup script
   - `helpers.sh` - Shared utility functions (logging, dependency checks)
-- `.github/actions/log-env/` - Custom GitHub Action for environment logging
 
 ## Development Workflows
 
@@ -166,10 +165,29 @@ Modify `ResponseHeadersPolicy` in `templates/cloudfront-site.yaml` to adjust:
 - **Domain prerequisites**: Must have Route 53 hosted zone in same AWS account
 - **OIDC setup**: Required once per AWS account for GitHub Actions authentication
 - **Node.js dependencies**: Lambda function requires AWS SDK v3 and mime-types packages
+- **CLI tools**: Requires `jq`, `make`, and AWS CLI configured locally for script deployment
+- **Makefile integration**: Use `make package-static` for Lambda deployment preparation
+
+## Lambda Custom Resource Pattern
+
+The `source/witch/` directory contains a Node.js Lambda function that handles initial content deployment:
+
+- **Purpose**: Uploads initial static content to S3 during CloudFormation stack creation
+- **Trigger**: CloudFormation Custom Resource in `custom-resource.yaml`
+- **Build process**: `make build-static` installs dependencies, `make package-static` creates deployment zip
+- **Environment**: Uses `BUCKET` env var passed from CloudFormation
+
+## GitHub Actions Architecture  
+
+- **Composite Action**: `.github/actions/deploy/action.yaml` encapsulates deployment logic
+- **Branch-based triggers**: `develop` → dev, `main/master` → staging, manual → prod
+- **Concurrency control**: Uses workflow + branch + environment + action for unique group naming
+- **Environment gates**: Uses GitHub environment protection rules for production deployments
 
 ## Troubleshooting Patterns
 
 **Stack deployment failures**: Check CloudFormation events, often certificate validation issues
 **Content not updating**: Verify S3 sync and CloudFront invalidation completed
 **OIDC authentication errors**: Ensure GitHub secrets `AWS_ROLE_ARN` is set correctly
+**Lambda packaging errors**: Run `make clean && make package-static` to rebuild dependencies
 **Domain resolution issues**: Verify hosted zone configuration and DNS propagation
