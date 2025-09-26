@@ -188,35 +188,6 @@ Resources:
             Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
           - Effect: Allow
             Action:
-              - lambda:CreateFunction
-              - lambda:UpdateFunctionCode
-              - lambda:UpdateFunctionConfiguration
-              - lambda:GetFunction
-              - lambda:DeleteFunction
-              - lambda:InvokeFunction
-              - lambda:ListFunctions
-              - lambda:PublishLayerVersion
-              - lambda:TagResource
-              - lambda:UntagResource
-              - lambda:PutFunctionConcurrency
-            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:*'
-          - Effect: Allow
-            Action:
-              - lambda:PublishLayerVersion
-              - lambda:TagResource
-              - lambda:UntagResource
-              - lambda:GetLayerVersion
-            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:*'
-          - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-              - logs:DescribeLogGroups
-              - logs:DescribeLogStreams
-            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*'
-          - Effect: Allow
-            Action:
               - sts:GetCallerIdentity
             Resource: '*'
 

@@ -12,7 +12,6 @@
 packaged.template
 packaged.zip
 s-headers.zip
-witch.zip
 
 # dependencies
 **/node_modules

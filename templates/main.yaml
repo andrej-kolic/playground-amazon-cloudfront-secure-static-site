@@ -114,9 +114,6 @@ Resources:
 Outputs:
   SolutionVersion:
     Value: !FindInMap [Solution, Constants, Version]
-  CopyFunction:
-    Description: S3 helper function
-    Value: !GetAtt CustomResourceStack.Outputs.CopyFunction
   S3BucketLogs:
     Description: Logging bucket
     Value: !GetAtt CustomResourceStack.Outputs.S3BucketLogs
